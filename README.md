@@ -492,30 +492,82 @@ CMS, API, шифрування доступів, мультимовність) �
 
 ## Деплой на власний VPS (nginx + systemd)
 
+Код тепер на GitHub (`git clone`/`git pull` замість rsync), тож деплой і
+оновлення — той самий цикл щоразу. Розраховано на Ubuntu/Debian; адаптуйте
+пакетний менеджер для іншого дистрибутива.
+
+### 1. Перший деплой (чистий сервер)
+
 ```bash
-npm run build
-rsync -avz --delete --exclude data/ . user@server:/var/www/intech.org.ua/
-# на сервері (перший деплой):
-npm ci --omit=dev
-npm run db:push          # створити базу
-npm run seed-content     # перенести контент, що жив у коді, в базу
-npm run create-admin -- --email you@intech.org.ua --name "..." --password "..."
+# --- на сервері, від root або через sudo ---
+
+# Node.js 22 (NodeSource) + nginx + certbot + git
+curl -fsSL https://deb.nodesource.com/setup_22.x | sudo -E bash -
+sudo apt-get install -y nodejs nginx certbot python3-certbot-nginx git
+
+# Системні бібліотеки для headless Chromium (Puppeteer — генерація PDF
+# квитанцій/рахунків/договорів). Без цього puppeteer.launch() впаде.
+sudo apt-get install -y \
+  libnss3 libatk1.0-0 libatk-bridge2.0-0 libcups2 libdrm2 libxkbcommon0 \
+  libxcomposite1 libxdamage1 libxfixes3 libxrandr2 libgbm1 libasound2 \
+  libpango-1.0-0 libpangocairo-1.0-0 libcairo2
+
+# Окремий системний користувач + каталог застосунку
+sudo useradd -r -m -d /var/www/intech.org.ua -s /usr/sbin/nologin intech || true
+sudo -u intech git clone https://github.com/OleksandrPLT/intech.git /var/www/intech.org.ua
+cd /var/www/intech.org.ua
+
+sudo -u intech npm ci --omit=dev
+sudo -u intech npm run build
+
+# .env — SMTP і CREDENTIALS_ENCRYPTION_KEY опційні (працює й без них,
+# див. розділи "Пошта" і "Фінанси" вище), але краще задати одразу:
+sudo -u intech tee .env > /dev/null <<'EOF'
+DATABASE_PATH=/var/www/intech.org.ua/data/app.db
+CREDENTIALS_ENCRYPTION_KEY=change-me-to-a-long-random-string
+EOF
+
+sudo -u intech npm run db:push          # створити базу
+sudo -u intech npm run seed-content     # перенести контент, що жив у коді, в базу
+sudo -u intech npm run create-admin -- --email you@intech.org.ua --name "Ваше Ім'я" --password "..."
+
+# systemd — застосунок піднімається сам після рестарту/збою
+sudo cp deploy/intech.service.example /etc/systemd/system/intech.service
+sudo systemctl daemon-reload
+sudo systemctl enable --now intech
+journalctl -u intech -f      # перевірити, що стартував без помилок
+
+# nginx — відредагуйте домен/шляхи в файлі перед копіюванням
+sudo cp deploy/nginx.conf.example /etc/nginx/sites-available/intech.org.ua
+sudo ln -s /etc/nginx/sites-available/intech.org.ua /etc/nginx/sites-enabled/
+sudo nginx -t && sudo systemctl reload nginx
+
+# сертифікат на всі три імені одразу
+sudo certbot --nginx -d intech.org.ua -d www.intech.org.ua -d admin.intech.org.ua
 ```
 
 - `deploy/nginx.conf.example` — реверс-проксі на Node-процес
   (`127.0.0.1:4321` за замовчуванням) для основного домену й
   `admin.intech.org.ua`, з кешуванням статичних `/_astro/` асетів.
-- `deploy/intech.service.example` — systemd unit, щоб `node
-  dist/server/entry.mjs` автоматично піднімався після рестарту/збою
-  (`systemctl enable --now intech`).
-- Сертифікат на всі три імені: `certbot --nginx -d intech.org.ua -d
-  www.intech.org.ua -d admin.intech.org.ua`.
+- `deploy/intech.service.example` — systemd unit; за потреби відкоригуйте
+  `User=`/`WorkingDirectory=`, якщо каталог чи користувач інші.
 - **PDF (Puppeteer)** — генерація квитанцій/рахунків/договорів у PDF
   тягне за собою headless Chromium (`puppeteer`, звичайна залежність,
-  не dev). `npm ci --omit=dev` все одно її поставить; на VPS має бути
-  достатньо RAM для Chromium (орієнтовно +200-300 МБ на короткочасний
-  процес рендеру одного документа) — на мінімальних 512 МБ дропletах
-  може знадобитись swap.
+  не dev — `npm ci --omit=dev` все одно її поставить, разом з бінарником
+  Chromium). На VPS має бути достатньо RAM (орієнтовно +200-300 МБ на
+  короткочасний процес рендеру одного документа) — на мінімальних 512 МБ
+  дроплетах може знадобитись swap.
+
+### 2. Наступні оновлення (після push у GitHub)
+
+```bash
+cd /var/www/intech.org.ua
+sudo -u intech git pull
+sudo -u intech npm ci --omit=dev
+sudo -u intech npm run build
+sudo -u intech npm run db:push   # якщо змінилась схема бази
+sudo systemctl restart intech
+```
 
 ## Бренд
 
