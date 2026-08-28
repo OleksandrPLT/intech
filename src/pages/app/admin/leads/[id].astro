@@ -1,0 +1,72 @@
+---
+import { eq } from 'drizzle-orm';
+import AppLayout from '../../../../layouts/AppLayout.astro';
+import CustomFieldsForm from '../../../../components/CustomFieldsForm.astro';
+import { db } from '../../../../db/client';
+import { leads } from '../../../../db/schema';
+import { leadStageLabels } from '../../../../lib/labels';
+import { getFieldDefs, getFieldValues } from '../../../../lib/customFields';
+
+const user = Astro.locals.user!;
+const id = Number(Astro.params.id);
+const lead = db.select().from(leads).where(eq(leads.id, id)).get();
+
+if (!lead) {
+	return Astro.redirect('/app/admin/leads');
+}
+
+const leadFieldDefs = getFieldDefs('lead');
+const fieldValues = getFieldValues('lead', id);
+---
+
+<AppLayout user={user} title={lead.name}>
+	<div class="app-header">
+		<h1>{lead.name}</h1>
+		<a href="/app/admin/leads" class="btn btn--ghost">← Усі ліди</a>
+	</div>
+
+	<form
+		method="POST"
+		action={`/api/admin/leads/${lead.id}`}
+		class="card"
+		style="padding: 20px; max-width: 520px; display: flex; flex-direction: column; gap: 12px;"
+	>
+		<div class="field">
+			<label for="name">Ім'я / компанія</label>
+			<input type="text" id="name" name="name" value={lead.name} required />
+		</div>
+		<div class="field">
+			<label for="contact">Контакт</label>
+			<input type="text" id="contact" name="contact" value={lead.contact ?? ''} />
+		</div>
+		<div class="field">
+			<label for="source">Джерело</label>
+			<input type="text" id="source" name="source" value={lead.source ?? ''} />
+		</div>
+		<div class="field">
+			<label for="stage">Стадія</label>
+			<select id="stage" name="stage">
+				{
+					Object.entries(leadStageLabels).map(([value, label]) => (
+						<option value={value} selected={value === lead.stage}>
+							{label}
+						</option>
+					))
+				}
+			</select>
+		</div>
+		<div class="field">
+			<label for="notes">Нотатки</label>
+			<textarea id="notes" name="notes">{lead.notes}</textarea>
+		</div>
+
+		<CustomFieldsForm defs={leadFieldDefs} values={fieldValues} />
+
+		<button type="submit" class="btn btn--primary" style="justify-content: center;">Зберегти</button>
+	</form>
+
+	<p style="margin-top: 20px; font-size: 13px; color: var(--muted); max-width: 520px;">
+		Коли лід стає клієнтом — створіть йому акаунт у <a href="/app/admin/clients" style="color: var(--accent);">розділі
+		«Клієнти»</a> і заведіть проект.
+	</p>
+</AppLayout>

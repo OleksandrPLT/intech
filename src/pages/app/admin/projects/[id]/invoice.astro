@@ -1,0 +1,81 @@
+---
+import { eq } from 'drizzle-orm';
+import AppLayout from '../../../../../layouts/AppLayout.astro';
+import InvoiceCard from '../../../../../components/InvoiceCard.astro';
+import { db } from '../../../../../db/client';
+import { projects, users, invoices } from '../../../../../db/schema';
+import { countries } from '../../../../../lib/countries';
+import { resolvePayer } from '../../../../../lib/payerInfo';
+
+const user = Astro.locals.user!;
+const projectId = Number(Astro.params.id);
+const billId = Number(Astro.url.searchParams.get('bill'));
+
+const project = db.select().from(projects).where(eq(projects.id, projectId)).get();
+if (!project) return Astro.redirect('/app/admin/projects');
+
+const client = db.select().from(users).where(eq(users.id, project.clientId)).get();
+const bill = db.select().from(invoices).where(eq(invoices.id, billId)).get();
+if (!bill || bill.projectId !== projectId) {
+	return Astro.redirect(`/app/admin/projects/${projectId}#invoices`);
+}
+
+const countryName = countries.find((c) => c.code === client?.country)?.name ?? client?.country ?? '';
+const invoiceNumber = `INV-${String(project.id).padStart(4, '0')}-${String(bill.id).padStart(5, '0')}`;
+const issueDate = bill.issuedAt ?? bill.createdAt.slice(0, 10);
+const description = bill.description || `Оплата за проектом «${project.name}»`;
+const payer = resolvePayer(project, client, countryName);
+
+// See receipt.astro for why: a separate render path with no AppLayout at
+// all for PDF/print, instead of relying on @media print to hide the
+// sidebar (which wasn't reliably clean enough).
+const bare = Astro.url.searchParams.get('bare') === '1';
+---
+
+{
+	bare ? (
+		<html lang="uk">
+			<head>
+				<meta charset="utf-8" />
+				<title>{`Рахунок ${invoiceNumber}`}</title>
+			</head>
+			<body>
+				<InvoiceCard
+					invoiceNumber={invoiceNumber}
+					issueDate={issueDate}
+					dueDate={bill.dueDate}
+					status={bill.status}
+					payer={payer}
+					projectName={project.name}
+					websiteUrl={project.websiteUrl}
+					amount={bill.amount}
+					currency={bill.currency}
+					description={description}
+				/>
+			</body>
+		</html>
+	) : (
+		<AppLayout user={user} title={`Рахунок ${invoiceNumber}`}>
+			<div class="app-header">
+				<h1>Рахунок {invoiceNumber}</h1>
+				<div style="display: flex; gap: 10px;">
+					<a href={`/app/admin/projects/${project.id}#invoices`} class="btn btn--ghost">← До проекту</a>
+					<a href={`/api/admin/projects/${project.id}/invoice-pdf?bill=${bill.id}`} class="btn btn--primary">Завантажити PDF</a>
+				</div>
+			</div>
+
+			<InvoiceCard
+				invoiceNumber={invoiceNumber}
+				issueDate={issueDate}
+				dueDate={bill.dueDate}
+				status={bill.status}
+				payer={payer}
+				projectName={project.name}
+				websiteUrl={project.websiteUrl}
+				amount={bill.amount}
+				currency={bill.currency}
+				description={description}
+			/>
+		</AppLayout>
+	)
+}

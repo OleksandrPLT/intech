@@ -1,0 +1,107 @@
+---
+import { ticketStatusLabels } from '../lib/labels';
+
+interface Attachment {
+	id: number;
+	filename: string;
+	size: number;
+}
+
+interface Message {
+	id: number;
+	body: string;
+	createdAt: string;
+	authorName: string;
+	authorRole: string;
+	authorId: number;
+	visibility: string;
+	attachments: Attachment[];
+}
+
+interface Props {
+	messages: Message[];
+	currentUserId: number;
+	isAdmin: boolean;
+	replyAction: string;
+	statusAction?: string;
+	currentStatus?: string;
+}
+
+const { messages, currentUserId, isAdmin, replyAction, statusAction, currentStatus } = Astro.props;
+
+function formatSize(bytes: number): string {
+	if (bytes < 1024) return `${bytes} B`;
+	if (bytes < 1024 * 1024) return `${Math.round(bytes / 1024)} KB`;
+	return `${(bytes / (1024 * 1024)).toFixed(1)} MB`;
+}
+---
+
+<div class="ticket-thread">
+	{
+		messages.map((m) => (
+			<div
+				class:list={[
+					'card',
+					'ticket-message',
+					{ 'ticket-message--self': m.authorId === currentUserId, 'ticket-message--internal': m.visibility === 'internal' },
+				]}
+			>
+				<div class="ticket-message__meta">
+					<span>
+						{m.authorName} · {m.authorRole === 'admin' ? 'адмін' : m.authorRole === 'staff' ? 'команда' : 'клієнт'}
+						{m.visibility === 'internal' && <span class="badge badge--muted" style="margin-left: 8px;">внутрішньо</span>}
+					</span>
+					<span>{new Date(m.createdAt).toLocaleString('uk-UA')}</span>
+				</div>
+				<div class="ticket-message__body">{m.body}</div>
+				{m.attachments.length > 0 && (
+					<div style="display: flex; flex-direction: column; gap: 6px; margin-top: 12px;">
+						{m.attachments.map((a) => (
+							<a href={`/api/attachments/${a.id}`} style="font-family: var(--font-mono); font-size: 12px; color: var(--accent); display: inline-flex; align-items: center; gap: 6px;">
+								📎 {a.filename} <span style="color: var(--muted);">({formatSize(a.size)})</span>
+							</a>
+						))}
+					</div>
+				)}
+			</div>
+		))
+	}
+</div>
+
+{
+	statusAction && currentStatus && (
+		<form method="POST" action={statusAction} style="display: flex; gap: 8px; align-items: center; margin-bottom: 18px;">
+			<label for="status" style="font-family: var(--font-mono); font-size: 12px; color: var(--muted);">
+				Статус:
+			</label>
+			<select id="status" name="status" style="font: inherit; font-size: 13px; background: var(--ink-soft); color: var(--paper); border: 1px solid var(--border); border-radius: 8px; padding: 6px 10px;">
+				{Object.entries(ticketStatusLabels).map(([value, label]) => (
+					<option value={value} selected={value === currentStatus}>
+						{label}
+					</option>
+				))}
+			</select>
+			<button type="submit" class="btn btn--ghost" style="padding: 7px 14px; font-size: 13px;">Оновити</button>
+		</form>
+	)
+}
+
+<form method="POST" action={replyAction} enctype="multipart/form-data" class="card" style="padding: 16px; display: flex; flex-direction: column; gap: 12px;">
+	<div class="field">
+		<label for="body">Відповідь</label>
+		<textarea id="body" name="body" required />
+	</div>
+	<div class="field">
+		<label for="attachment">Файл (необов'язково, до 10 МБ)</label>
+		<input type="file" id="attachment" name="attachment" />
+	</div>
+	{
+		isAdmin && (
+			<label style="display: flex; align-items: center; gap: 8px; font-size: 13px; color: var(--muted);">
+				<input type="checkbox" name="internal" value="1" style="width: 15px; height: 15px;" />
+				Внутрішня нотатка (клієнт її не бачить)
+			</label>
+		)
+	}
+	<button type="submit" class="btn btn--primary" style="align-self: flex-start; padding: 9px 20px; font-size: 13px;">Надіслати</button>
+</form>

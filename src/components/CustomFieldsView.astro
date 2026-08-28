@@ -1,0 +1,28 @@
+---
+import type { FieldDef } from '../lib/customFields';
+
+interface Props {
+	defs: FieldDef[];
+	values: Record<string, string>;
+}
+
+const { defs, values } = Astro.props;
+const filled = defs.filter((d) => values[d.key]);
+---
+
+{
+	filled.length > 0 && (
+		<dl style="display: flex; flex-direction: column; gap: 12px; margin: 0;">
+			{filled.map((def) => (
+				<div>
+					<dt style="font-family: var(--font-mono); font-size: 11px; letter-spacing: 0.06em; text-transform: uppercase; color: var(--muted); margin-bottom: 3px;">
+						{def.label}
+					</dt>
+					<dd style="margin: 0; font-size: 14px; color: var(--paper);">
+						{def.type === 'boolean' ? (values[def.key] === '1' ? 'Так' : 'Ні') : values[def.key]}
+					</dd>
+				</div>
+			))}
+		</dl>
+	)
+}

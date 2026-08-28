@@ -1,0 +1,56 @@
+---
+import AppLayout from '../../../../../layouts/AppLayout.astro';
+
+const user = Astro.locals.user!;
+const error = Astro.url.searchParams.get('error');
+const errorMessages: Record<string, string> = {
+	invalid: 'Вкажіть URL проекту.',
+	image: 'Не вдалося завантажити лого (максимум 5 МБ).',
+};
+---
+
+<AppLayout user={user} title="Новий проект">
+	<div class="app-header">
+		<h1>Новий проект</h1>
+		<a href="/app/admin/content/portfolio" class="btn btn--ghost">← Усе портфоліо</a>
+	</div>
+
+	{error && <p class="form-error" style="margin-bottom: 14px; max-width: 640px;">{errorMessages[error] ?? 'Сталася помилка.'}</p>}
+
+	<form method="POST" action="/api/admin/portfolio" enctype="multipart/form-data" class="card" style="padding: 20px; max-width: 640px; display: flex; flex-direction: column; gap: 14px;">
+		<div class="field">
+			<label for="url">URL сайту</label>
+			<input type="text" id="url" name="url" placeholder="https://…" required />
+		</div>
+		<div class="field">
+			<label for="tags">Теги (через кому)</label>
+			<input type="text" id="tags" name="tags" placeholder="CRM, Bot" />
+		</div>
+		<div class="field">
+			<label for="logo">Лого (необов'язково)</label>
+			<input type="file" id="logo" name="logo" accept="image/*" />
+		</div>
+
+		{
+			(['uk', 'en', 'et'] as const).map((lang) => (
+				<details open={lang === 'uk'} class="card" style="padding: 16px;">
+					<summary style="cursor: pointer; font-family: var(--font-mono); font-size: 13px; color: var(--accent);">
+						{lang.toUpperCase()}
+					</summary>
+					<div style="display: flex; flex-direction: column; gap: 14px; margin-top: 16px;">
+						<div class="field">
+							<label for={`title_${lang}`}>Назва</label>
+							<input type="text" id={`title_${lang}`} name={`title_${lang}`} required />
+						</div>
+						<div class="field">
+							<label for={`description_${lang}`}>Опис (одне речення)</label>
+							<textarea id={`description_${lang}`} name={`description_${lang}`} required />
+						</div>
+					</div>
+				</details>
+			))
+		}
+
+		<button type="submit" class="btn btn--primary" style="align-self: flex-start;">Додати</button>
+	</form>
+</AppLayout>

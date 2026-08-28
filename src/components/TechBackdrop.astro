@@ -1,0 +1,59 @@
+---
+/**
+ * Purely decorative background texture — generic tech glyphs (not brand
+ * logos; those live in the labeled "tech stack" section on /about) scattered
+ * at low opacity behind a hero. Absolutely positioned, aria-hidden, never
+ * competes with foreground content for attention.
+ */
+const glyphs = [
+	{ d: 'M8 9l-4 3 4 3M16 9l4 3-4 3', x: 6, y: 8, size: 46, rotate: -6 }, // </>
+	{ d: 'M4 5h16v12H4z M4 9h16 M7 7h.01 M10 7h.01', x: 62, y: 14, size: 40, rotate: 4 }, // terminal-ish window
+	{ d: 'M4 4h16v6H4z M4 14h16v6H4z M8 7h.01 M8 17h.01', x: 20, y: 58, size: 42, rotate: 3 }, // server rack
+	{ d: 'M4 7a4 4 0 014-4h8a4 4 0 014 4v0a4 4 0 01-4 4H8a4 4 0 01-4-4v0zM4 17a4 4 0 014-4h8a4 4 0 014 4v0a4 4 0 01-4 4H8a4 4 0 01-4-4v0z', x: 78, y: 60, size: 44, rotate: -4 }, // db-ish
+	{ d: 'M12 2l8 4v6c0 5-3.5 8-8 10-4.5-2-8-5-8-10V6l8-4z', x: 44, y: 4, size: 36, rotate: 0 }, // shield
+	{ d: 'M12 5v3M12 16v3M5 12h3M16 12h3M7 7l2 2M17 7l-2 2M7 17l2-2M17 17l-2-2', x: 6, y: 40, size: 34, rotate: 10 }, // gear-ish
+	{ d: 'M3 18a9 9 0 0118 0M7 18a5 5 0 0110 0M11 18a1 1 0 012 0', x: 60, y: 76, size: 40, rotate: -2 }, // wifi/cloud signal
+	{ d: 'M12 2l9 5v10l-9 5-9-5V7l9-5zM3 7l9 5 9-5M12 12v10', x: 86, y: 30, size: 38, rotate: 6 }, // cube/package
+];
+---
+
+<div class="tech-backdrop" aria-hidden="true">
+	{
+		glyphs.map((g) => (
+			<svg
+				class="tech-backdrop__glyph"
+				style={`left:${g.x}%; top:${g.y}%; width:${g.size}px; height:${g.size}px; transform:rotate(${g.rotate}deg);`}
+				viewBox="0 0 24 24"
+				fill="none"
+				stroke="currentColor"
+				stroke-width="1.2"
+				stroke-linecap="round"
+				stroke-linejoin="round"
+			>
+				<path d={g.d} />
+			</svg>
+		))
+	}
+</div>
+
+<style>
+	.tech-backdrop {
+		position: absolute;
+		inset: 0;
+		overflow: hidden;
+		pointer-events: none;
+		color: var(--paper);
+		z-index: 0;
+	}
+
+	.tech-backdrop__glyph {
+		position: absolute;
+		opacity: 0.05;
+	}
+
+	@media (max-width: 780px) {
+		.tech-backdrop {
+			display: none;
+		}
+	}
+</style>

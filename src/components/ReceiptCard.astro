@@ -1,0 +1,250 @@
+---
+// The actual receipt document — used both inside AppLayout (normal admin
+// browsing) and standalone in "bare" mode (no AppLayout at all, for
+// PDF/print — see receipt.astro's `bare` branch). Keeping this as one
+// component is what guarantees both renders never drift apart.
+interface Props {
+	receiptNumber: string;
+	issueDate: string;
+	payer: { name: string; lines: string[]; email: string };
+	projectName: string;
+	websiteUrl: string | null;
+	amount: string;
+	currency: string;
+	description: string;
+	coveredTasks: { id: number; title: string }[];
+}
+
+const { receiptNumber, issueDate, payer, projectName, websiteUrl, amount, currency, description, coveredTasks } = Astro.props;
+---
+
+<div class="receipt">
+	<div class="receipt__head">
+		<div class="receipt__brand">
+			<span class="receipt__mark" aria-hidden="true">
+				<i></i><i></i>
+			</span>
+			<div>
+				<div class="receipt__wordmark">intech<span>.org.ua</span></div>
+				<p>Веб-розробка та ІТ-інфраструктура<br />Полтава, Україна</p>
+			</div>
+		</div>
+		<div class="receipt__meta">
+			<h2>Квитанція про оплату</h2>
+			<p>№ {receiptNumber}</p>
+			<p>Дата: {new Date(issueDate).toLocaleDateString('uk-UA')}</p>
+		</div>
+	</div>
+
+	<div class="receipt__parties">
+		<div>
+			<span class="receipt__label">Виконавець</span>
+			<p>intech.org.ua<br />Олександр Левков<br />Полтава, Україна</p>
+		</div>
+		<div>
+			<span class="receipt__label">Замовник</span>
+			<p>
+				{payer.name}
+				{payer.lines.map((l) => <><br />{l}</>)}
+				<br />{payer.email}
+			</p>
+		</div>
+	</div>
+
+	<table class="receipt__table">
+		<thead>
+			<tr>
+				<th>Проект</th>
+				<th>За що оплата</th>
+				<th>Сума</th>
+			</tr>
+		</thead>
+		<tbody>
+			<tr>
+				<td>
+					{projectName}
+					{websiteUrl && <><br /><span class="receipt__muted">{websiteUrl}</span></>}
+				</td>
+				<td>
+					{coveredTasks.length > 0 ? (
+						<ul class="receipt__tasklist">
+							{coveredTasks.map((t) => (
+								<li>{t.title}</li>
+							))}
+						</ul>
+					) : (
+						description
+					)}
+				</td>
+				<td>{amount} {currency}</td>
+			</tr>
+		</tbody>
+		<tfoot>
+			<tr>
+				<td colspan="2">Отримано</td>
+				<td>{amount} {currency}</td>
+			</tr>
+		</tfoot>
+	</table>
+
+	<p class="receipt__footer">Дякуємо за співпрацю! · intech.org.ua</p>
+</div>
+
+<style>
+	.receipt {
+		background: #ffffff;
+		color: #1c2230;
+		border-radius: var(--radius-md);
+		padding: 40px;
+		max-width: 720px;
+		font-family: Arial, Helvetica, sans-serif;
+	}
+
+	.receipt__head {
+		display: flex;
+		justify-content: space-between;
+		align-items: flex-start;
+		gap: 24px;
+		border-bottom: 2px solid #1c2230;
+		padding-bottom: 20px;
+		margin-bottom: 24px;
+	}
+
+	/* Explicit hex colors (not var(--accent) etc.) — this document forces a
+	   white background regardless of the viewer's site theme, so it can't
+	   rely on theme-dependent tokens that might resolve near-white text on
+	   a dark palette. Same reasoning as the email templates. */
+	.receipt__brand {
+		display: flex;
+		align-items: center;
+		gap: 12px;
+	}
+
+	.receipt__mark {
+		display: flex;
+		flex-direction: column;
+		width: 34px;
+		height: 34px;
+		border-radius: 8px;
+		background: #0b0e14;
+		align-items: center;
+		justify-content: center;
+	}
+
+	.receipt__mark i {
+		display: block;
+		width: 6px;
+		border-radius: 2px;
+	}
+
+	.receipt__mark i:first-child {
+		background: #16a34a;
+		height: 15px;
+		margin-bottom: 1px;
+	}
+
+	.receipt__mark i:last-child {
+		background: #2a2f3a;
+		height: 6px;
+	}
+
+	.receipt__wordmark {
+		font-weight: 800;
+		font-size: 20px;
+	}
+
+	.receipt__wordmark span {
+		color: #15803d;
+	}
+
+	.receipt__head p {
+		color: #555;
+		font-size: 13px;
+		margin: 6px 0 0;
+	}
+
+	.receipt__meta {
+		text-align: right;
+	}
+
+	.receipt__meta h2 {
+		margin: 0;
+		font-size: 18px;
+	}
+
+	.receipt__meta p {
+		color: #555;
+		font-size: 13px;
+		margin: 4px 0 0;
+	}
+
+	.receipt__parties {
+		display: grid;
+		grid-template-columns: 1fr 1fr;
+		gap: 24px;
+		margin-bottom: 28px;
+	}
+
+	.receipt__label {
+		font-size: 11px;
+		text-transform: uppercase;
+		letter-spacing: 0.06em;
+		color: #888;
+	}
+
+	.receipt__parties p {
+		margin: 6px 0 0;
+		font-size: 14px;
+		line-height: 1.5;
+	}
+
+	.receipt__table {
+		width: 100%;
+		border-collapse: collapse;
+		margin-bottom: 24px;
+	}
+
+	.receipt__table th,
+	.receipt__table td {
+		text-align: left;
+		padding: 10px 8px;
+		border-bottom: 1px solid #ddd;
+		font-size: 14px;
+		vertical-align: top;
+	}
+
+	.receipt__muted {
+		color: #888;
+		font-size: 12px;
+	}
+
+	.receipt__tasklist {
+		margin: 0;
+		padding-left: 18px;
+	}
+
+	.receipt__tasklist li {
+		margin-bottom: 2px;
+	}
+
+	.receipt__table tfoot td {
+		font-weight: 700;
+		border-bottom: none;
+		border-top: 2px solid #1c2230;
+	}
+
+	.receipt__footer {
+		color: #888;
+		font-size: 12px;
+		text-align: center;
+		margin: 0;
+	}
+
+	@media print {
+		.receipt {
+			border-radius: 0;
+			padding: 0;
+			max-width: none;
+		}
+	}
+</style>

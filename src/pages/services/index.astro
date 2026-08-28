@@ -1,0 +1,62 @@
+---
+import BaseLayout from '../../layouts/BaseLayout.astro';
+import ServiceCard from '../../components/ServiceCard.astro';
+import { getServices } from '../../data/services';
+import { useTranslations } from '../../i18n/utils';
+
+const lang = 'uk' as const;
+const t = useTranslations(lang);
+const services = getServices();
+---
+
+<BaseLayout lang={lang} title={t('meta.services.title')} description={t('meta.services.description')}>
+	<section class="section page-hero">
+		<div class="container">
+			<span class="eyebrow">{t('home.services.eyebrow')}</span>
+			<h1>{t('services.title')}</h1>
+			<p class="page-hero__lede">{t('services.lede')}</p>
+		</div>
+	</section>
+
+	<section class="section section--tight">
+		<div class="container">
+			<div class="services-grid">
+				{services.map((service) => <ServiceCard service={service} lang={lang} />)}
+			</div>
+		</div>
+	</section>
+</BaseLayout>
+
+<style>
+	.page-hero {
+		padding-bottom: 0;
+	}
+
+	h1 {
+		font-size: clamp(32px, 4.6vw, 48px);
+		margin-top: 16px;
+	}
+
+	.page-hero__lede {
+		font-size: 18px;
+		max-width: 620px;
+	}
+
+	.services-grid {
+		display: grid;
+		grid-template-columns: repeat(3, 1fr);
+		gap: 24px;
+	}
+
+	@media (max-width: 860px) {
+		.services-grid {
+			grid-template-columns: 1fr 1fr;
+		}
+	}
+
+	@media (max-width: 620px) {
+		.services-grid {
+			grid-template-columns: 1fr;
+		}
+	}
+</style>

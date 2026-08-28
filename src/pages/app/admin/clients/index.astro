@@ -1,0 +1,114 @@
+---
+import { desc, eq, sql } from 'drizzle-orm';
+import AppLayout from '../../../../layouts/AppLayout.astro';
+import CustomFieldsForm from '../../../../components/CustomFieldsForm.astro';
+import ClientProfileFields from '../../../../components/ClientProfileFields.astro';
+import { db } from '../../../../db/client';
+import { users, projects } from '../../../../db/schema';
+import { getFieldDefs } from '../../../../lib/customFields';
+
+const user = Astro.locals.user!;
+
+const clients = db
+	.select({
+		id: users.id,
+		name: users.name,
+		email: users.email,
+		createdAt: users.createdAt,
+		projectCount: sql<number>`(select count(*) from ${projects} where ${projects.clientId} = ${users.id})`,
+	})
+	.from(users)
+	.where(eq(users.role, 'client'))
+	.orderBy(desc(users.createdAt))
+	.all();
+
+const clientFieldDefs = getFieldDefs('client');
+
+const q = (Astro.url.searchParams.get('q') || '').trim().toLowerCase();
+const filtered = clients.filter((c) => !q || c.name.toLowerCase().includes(q) || c.email.toLowerCase().includes(q));
+
+const error = Astro.url.searchParams.get('error');
+const errorMessages: Record<string, string> = {
+	invalid: "Заповніть ім'я, email і пароль (мінімум 8 символів).",
+	exists: 'Клієнт з таким email вже існує.',
+};
+---
+
+<AppLayout user={user} title="Клієнти">
+	<div class="app-header">
+		<h1>Клієнти</h1>
+	</div>
+
+	<form method="GET" style="display: flex; gap: 12px; margin-bottom: 14px;">
+		<input
+			type="text"
+			name="q"
+			placeholder="Пошук за ім'ям або email…"
+			value={q}
+			style="flex: 1; max-width: 360px; font: inherit; background: var(--ink-soft); color: var(--paper); border: 1px solid var(--border); border-radius: 8px; padding: 10px 14px;"
+		/>
+		<button type="submit" class="btn btn--ghost">Пошук</button>
+	</form>
+
+	<div class="card table-wrap" style="margin-bottom: 20px;">
+		<table class="data-table">
+			<thead>
+				<tr>
+					<th>Ім'я</th>
+					<th>Email</th>
+					<th>Проектів</th>
+					<th>Створено</th>
+				</tr>
+			</thead>
+			<tbody>
+				{
+					filtered.length === 0 ? (
+						<tr>
+							<td colspan="4" style="color: var(--muted);">
+								Нічого не знайдено.
+							</td>
+						</tr>
+					) : (
+						filtered.map((c) => (
+							<tr>
+								<td>
+									<a href={`/app/admin/clients/${c.id}`}>{c.name}</a>
+								</td>
+								<td>{c.email}</td>
+								<td>{c.projectCount}</td>
+								<td>{new Date(c.createdAt).toLocaleDateString('uk-UA')}</td>
+							</tr>
+						))
+					)
+				}
+			</tbody>
+		</table>
+	</div>
+
+	<div class="card" style="padding: 20px; max-width: 760px;">
+		<h2 style="font-size: 16px; margin-bottom: 4px;">Новий клієнт</h2>
+		<p style="font-size: 13px; color: var(--muted); margin-bottom: 14px;">
+			Створіть акаунт і передайте клієнту email та пароль напряму.
+		</p>
+
+		{error && <p class="form-error" style="margin-bottom: 16px;">{errorMessages[error] ?? 'Сталася помилка.'}</p>}
+
+		<form method="POST" action="/api/admin/clients" class="form-grid">
+			<div class="field">
+				<label for="name">Ім'я</label>
+				<input type="text" id="name" name="name" required />
+			</div>
+			<div class="field">
+				<label for="email">Email</label>
+				<input type="email" id="email" name="email" required />
+			</div>
+			<div class="field">
+				<label for="password">Тимчасовий пароль</label>
+				<input type="text" id="password" name="password" required minlength="8" />
+			</div>
+			<ClientProfileFields />
+			<CustomFieldsForm defs={clientFieldDefs} />
+			<button type="submit" class="btn btn--primary" style="grid-column: 1 / -1; justify-content: center;">Створити клієнта</button>
+		</form>
+	</div>
+</AppLayout>

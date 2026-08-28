@@ -1,0 +1,26 @@
+# Example systemd unit so the Node/Astro server survives reboots and crashes.
+#
+# Usage:
+#   sudo cp deploy/intech.service.example /etc/systemd/system/intech.service
+#   sudo systemctl daemon-reload
+#   sudo systemctl enable --now intech
+#   journalctl -u intech -f      # logs
+
+[Unit]
+Description=intech.org.ua (Astro SSR)
+After=network.target
+
+[Service]
+Type=simple
+User=intech
+WorkingDirectory=/var/www/intech.org.ua
+Environment=NODE_ENV=production
+Environment=HOST=127.0.0.1
+Environment=PORT=4321
+Environment=DATABASE_PATH=/var/www/intech.org.ua/data/app.db
+ExecStart=/usr/bin/node ./dist/server/entry.mjs
+Restart=on-failure
+RestartSec=3
+
+[Install]
+WantedBy=multi-user.target

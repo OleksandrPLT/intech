@@ -1,0 +1,160 @@
+---
+import { eq, desc, inArray, asc } from 'drizzle-orm';
+import AppLayout from '../../../layouts/AppLayout.astro';
+import { db } from '../../../db/client';
+import { projects, tasks, projectFiles, projectRevisions } from '../../../db/schema';
+import { projectStatusLabels, paymentStatusLabels, taskStatusLabels, revisionStatusLabels } from '../../../lib/labels';
+import { formatFileSize } from '../../../lib/format';
+
+const user = Astro.locals.user!;
+
+const myProjects = db
+	.select()
+	.from(projects)
+	.where(eq(projects.clientId, user.id))
+	.orderBy(desc(projects.createdAt))
+	.all();
+
+const projectIds = myProjects.map((p) => p.id);
+const allTasks =
+	projectIds.length === 0
+		? []
+		: db.select().from(tasks).where(inArray(tasks.projectId, projectIds)).orderBy(asc(tasks.sortOrder), asc(tasks.id)).all();
+
+const allFiles =
+	projectIds.length === 0
+		? []
+		: db.select().from(projectFiles).where(inArray(projectFiles.projectId, projectIds)).orderBy(desc(projectFiles.createdAt)).all();
+
+const allRevisions =
+	projectIds.length === 0
+		? []
+		: db.select().from(projectRevisions).where(inArray(projectRevisions.projectId, projectIds)).orderBy(desc(projectRevisions.createdAt)).all();
+
+const error = Astro.url.searchParams.get('error');
+
+const taskIcon: Record<string, string> = { todo: '○', in_progress: '◐', done: '●' };
+---
+
+<AppLayout user={user} title="Мої проекти">
+	<div class="app-header">
+		<h1>Вітаємо, {user.name.split(' ')[0]}</h1>
+	</div>
+
+	{error === 'comment' && <p class="form-error" style="margin-bottom: 14px;">Опишіть, які потрібні правки.</p>}
+	{error === 'file' && <p class="form-error" style="margin-bottom: 14px;">Не вдалося завантажити файл (максимум 10 МБ).</p>}
+
+	{
+		myProjects.length === 0 ? (
+			<p class="card" style="padding: 20px; color: var(--muted);">
+				Поки що немає прив'язаних проектів. Якщо це помилка — напишіть нам.
+			</p>
+		) : (
+			<div style="display: flex; flex-direction: column; gap: 12px;">
+				{myProjects.map((p) => {
+					const projectTasks = allTasks.filter((t) => t.projectId === p.id);
+					const projectFilesList = allFiles.filter((f) => f.projectId === p.id);
+					const projectRevisionsList = allRevisions.filter((r) => r.projectId === p.id);
+					return (
+						<div class="card" style="padding: 18px;">
+							<div style="display: flex; justify-content: space-between; align-items: flex-start; gap: 12px; flex-wrap: wrap;">
+								<div>
+									<h2 style="font-size: 16px; margin-bottom: 6px;">{p.name}</h2>
+									{p.description && <p style="font-size: 14px; margin: 0; max-width: 520px;">{p.description}</p>}
+								</div>
+								<div style="display: flex; gap: 8px; flex-wrap: wrap;">
+									<span class="badge">{projectStatusLabels[p.status] ?? p.status}</span>
+									<span class="badge badge--accent">{paymentStatusLabels[p.paymentStatus] ?? p.paymentStatus}</span>
+								</div>
+							</div>
+
+							{projectTasks.length > 0 && (
+								<div style="margin-top: 18px; padding-top: 18px; border-top: 1px solid var(--border); display: flex; flex-direction: column; gap: 8px;">
+									{projectTasks.map((t) => (
+										<div style="display: flex; align-items: center; gap: 10px; font-size: 14px;">
+											<span style="color: var(--accent); width: 14px;">{taskIcon[t.status] ?? '○'}</span>
+											<span style={t.status === 'done' ? 'color: var(--muted); text-decoration: line-through;' : 'color: var(--paper);'}>
+												{t.title}
+											</span>
+											<span style="margin-left: auto; color: var(--muted); font-size: 12px;">{taskStatusLabels[t.status]}</span>
+										</div>
+									))}
+								</div>
+							)}
+
+							{projectRevisionsList.length > 0 && (
+								<div style="margin-top: 18px; padding-top: 18px; border-top: 1px solid var(--border);">
+									<h3 style="font-size: 13px; color: var(--muted); margin: 0 0 10px; text-transform: uppercase; letter-spacing: 0.04em;">На затвердження</h3>
+									<div style="display: flex; flex-direction: column; gap: 10px;">
+										{projectRevisionsList.map((r) => (
+											<div class="card" style="padding: 14px 16px; background: var(--ink-soft);">
+												<div style="display: flex; justify-content: space-between; align-items: flex-start; gap: 10px; flex-wrap: wrap;">
+													<div>
+														<strong style="font-size: 14px;">{r.title}</strong>
+														{r.description && <p style="font-size: 13px; margin: 4px 0 0;">{r.description}</p>}
+														{r.fileId && (
+															<a href={`/api/project-files/${r.fileId}`} style="font-size: 12px; color: var(--accent); display: inline-block; margin-top: 6px;">
+																📎 Переглянути файл
+															</a>
+														)}
+														{r.clientComment && (
+															<p style="font-size: 12px; color: var(--muted); margin: 6px 0 0;">Ваш коментар: {r.clientComment}</p>
+														)}
+													</div>
+													<span class={`badge ${r.status === 'approved' ? 'badge--accent' : r.status === 'changes_requested' ? 'badge--blue' : ''}`}>
+														{revisionStatusLabels[r.status] ?? r.status}
+													</span>
+												</div>
+
+												{r.status === 'pending' && (
+													<div style="margin-top: 12px; display: flex; gap: 8px; flex-wrap: wrap; align-items: center;">
+														<form method="POST" action={`/api/revisions/${r.id}/respond`}>
+															<input type="hidden" name="decision" value="approved" />
+															<button type="submit" class="btn btn--primary" style="padding: 7px 14px; font-size: 13px;">Затвердити</button>
+														</form>
+														<details style="flex: 1; min-width: 200px;">
+															<summary style="cursor: pointer; font-size: 13px; color: var(--muted);">Потрібні правки…</summary>
+															<form method="POST" action={`/api/revisions/${r.id}/respond`} style="display: flex; gap: 8px; margin-top: 8px;">
+																<input type="hidden" name="decision" value="changes_requested" />
+																<input type="text" name="comment" placeholder="Що потрібно змінити" required style="flex: 1; font: inherit; background: var(--ink); color: var(--paper); border: 1px solid var(--border); border-radius: 8px; padding: 8px 10px; font-size: 13px;" />
+																<button type="submit" class="btn btn--ghost" style="padding: 7px 14px; font-size: 13px;">Надіслати</button>
+															</form>
+														</details>
+													</div>
+												)}
+											</div>
+										))}
+									</div>
+								</div>
+							)}
+
+							<div style="margin-top: 18px; padding-top: 18px; border-top: 1px solid var(--border);">
+								<h3 style="font-size: 13px; color: var(--muted); margin: 0 0 10px; text-transform: uppercase; letter-spacing: 0.04em;">Файли проекту</h3>
+								{
+									projectFilesList.length > 0 && (
+										<div style="display: flex; flex-direction: column; gap: 6px; margin-bottom: 10px;">
+											{projectFilesList.map((f) => (
+												<a href={`/api/project-files/${f.id}`} style="font-size: 13px; color: var(--paper);">
+													{f.filename} <span style="color: var(--muted);">({formatFileSize(f.size)})</span>
+												</a>
+											))}
+										</div>
+									)
+								}
+								<form method="POST" action="/api/project-files" enctype="multipart/form-data" style="display: flex; gap: 8px;">
+									<input type="hidden" name="projectId" value={p.id} />
+									<input type="file" name="file" required style="flex: 1; font-size: 13px;" />
+									<button type="submit" class="btn btn--ghost" style="padding: 7px 14px; font-size: 13px;">Завантажити</button>
+								</form>
+							</div>
+
+							<a href={`/app/client/tickets/new?projectId=${p.id}`} class="btn btn--ghost" style="margin-top: 18px;">
+								Створити тікет по проекту
+							</a>
+						</div>
+					);
+				})}
+			</div>
+		)
+	}
+</AppLayout>

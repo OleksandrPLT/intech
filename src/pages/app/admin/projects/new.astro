@@ -1,0 +1,48 @@
+---
+import { eq } from 'drizzle-orm';
+import AppLayout from '../../../../layouts/AppLayout.astro';
+import { db } from '../../../../db/client';
+import { users } from '../../../../db/schema';
+
+const user = Astro.locals.user!;
+const clients = db.select().from(users).where(eq(users.role, 'client')).all();
+const error = Astro.url.searchParams.get('error');
+---
+
+<AppLayout user={user} title="Новий проект">
+	<div class="app-header">
+		<h1>Новий проект</h1>
+		<a href="/app/admin/projects" class="btn btn--ghost">← Усі проекти</a>
+	</div>
+
+	{error && <p class="form-error" style="margin-bottom: 14px; max-width: 480px;">Заповніть назву й оберіть клієнта.</p>}
+
+	{
+		clients.length === 0 ? (
+			<p style="color: var(--muted);">
+				Спочатку <a href="/app/admin/clients" style="color: var(--accent);">додайте клієнта</a> — проект прив'язується до
+				акаунта клієнта.
+			</p>
+		) : (
+			<form method="POST" action="/api/admin/projects" class="card" style="padding: 20px; max-width: 480px; display: flex; flex-direction: column; gap: 12px;">
+				<div class="field">
+					<label for="name">Назва проекту</label>
+					<input type="text" id="name" name="name" required />
+				</div>
+				<div class="field">
+					<label for="clientId">Клієнт</label>
+					<select id="clientId" name="clientId" required>
+						{clients.map((c) => (
+							<option value={c.id}>{c.name} ({c.email})</option>
+						))}
+					</select>
+				</div>
+				<div class="field">
+					<label for="description">Опис</label>
+					<textarea id="description" name="description" />
+				</div>
+				<button type="submit" class="btn btn--primary" style="justify-content: center;">Створити проект</button>
+			</form>
+		)
+	}
+</AppLayout>

@@ -1,0 +1,84 @@
+---
+import { eq, desc, inArray } from 'drizzle-orm';
+import AppLayout from '../../../../layouts/AppLayout.astro';
+import { db } from '../../../../db/client';
+import { tickets, projects } from '../../../../db/schema';
+import { ticketStatusLabels } from '../../../../lib/labels';
+import { formatTicketNumber } from '../../../../lib/ticketNumber';
+
+const user = Astro.locals.user!;
+
+const myProjectIds = db
+	.select({ id: projects.id })
+	.from(projects)
+	.where(eq(projects.clientId, user.id))
+	.all()
+	.map((p) => p.id);
+
+const myTickets =
+	myProjectIds.length === 0
+		? []
+		: db
+				.select({
+					id: tickets.id,
+					subject: tickets.subject,
+					status: tickets.status,
+					category: tickets.category,
+					number: tickets.number,
+					updatedAt: tickets.updatedAt,
+					projectName: projects.name,
+				})
+				.from(tickets)
+				.leftJoin(projects, eq(tickets.projectId, projects.id))
+				.where(inArray(tickets.projectId, myProjectIds))
+				.orderBy(desc(tickets.updatedAt))
+				.all();
+---
+
+<AppLayout user={user} title="Тікети">
+	<div class="app-header">
+		<h1>Тікети</h1>
+		<a href="/app/client/tickets/new" class="btn btn--primary">+ Новий тікет</a>
+	</div>
+
+	<div class="card table-wrap">
+		<table class="data-table">
+			<thead>
+				<tr>
+					<th>№</th>
+					<th>Тема</th>
+					<th>Проект</th>
+					<th>Статус</th>
+					<th>Оновлено</th>
+				</tr>
+			</thead>
+			<tbody>
+				{
+					myTickets.length === 0 ? (
+						<tr>
+							<td colspan="5" style="color: var(--muted);">
+								Тікетів ще немає.
+							</td>
+						</tr>
+					) : (
+						myTickets.map((t) => (
+							<tr>
+								<td style="font-family: var(--font-mono); font-size: 12px; color: var(--accent);">
+									{formatTicketNumber(t.category, t.number)}
+								</td>
+								<td>
+									<a href={`/app/client/tickets/${t.id}`}>{t.subject}</a>
+								</td>
+								<td>{t.projectName}</td>
+								<td>
+									<span class="badge">{ticketStatusLabels[t.status] ?? t.status}</span>
+								</td>
+								<td>{new Date(t.updatedAt).toLocaleString('uk-UA')}</td>
+							</tr>
+						))
+					)
+				}
+			</tbody>
+		</table>
+	</div>
+</AppLayout>

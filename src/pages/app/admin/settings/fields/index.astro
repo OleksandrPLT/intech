@@ -1,0 +1,107 @@
+---
+import AppLayout from '../../../../../layouts/AppLayout.astro';
+import { getFieldDefs, fieldTypeLabels, entityLabels, type EntityType } from '../../../../../lib/customFields';
+
+const user = Astro.locals.user!;
+const entities: EntityType[] = ['lead', 'project', 'client'];
+const error = Astro.url.searchParams.get('error');
+---
+
+<AppLayout user={user} title="Налаштування полів">
+	<div class="app-header">
+		<h1>Власні поля</h1>
+	</div>
+	<p style="color: var(--muted); margin-top: -20px; margin-bottom: 20px; max-width: 640px; font-size: 14px;">
+		Поля, які ви додасте тут, автоматично з'являться у формах ліда, проекту чи профілю клієнта — без правок коду.
+	</p>
+
+	{error && <p class="form-error" style="margin-bottom: 16px; max-width: 520px;">Вкажіть назву поля.</p>}
+
+	{
+		entities.map((entity) => {
+			const defs = getFieldDefs(entity);
+			return (
+				<section style="margin-bottom: 24px;">
+					<h2 style="font-size: 15px; margin-bottom: 16px;">{entityLabels[entity]}</h2>
+
+					{defs.length > 0 && (
+						<div class="card table-wrap" style="margin-bottom: 14px;">
+							<table class="data-table">
+								<thead>
+									<tr>
+										<th>Назва</th>
+										<th>Ключ</th>
+										<th>Тип</th>
+										<th>Обов'язкове</th>
+										<th>Порядок</th>
+										<th />
+									</tr>
+								</thead>
+								<tbody>
+									{defs.map((def) => (
+										<tr>
+											<td>{def.label}</td>
+											<td style="font-family: var(--font-mono); font-size: 12px; color: var(--muted);">{def.key}</td>
+											<td>{fieldTypeLabels[def.type]}</td>
+											<td>{def.required ? 'Так' : '—'}</td>
+											<td>{def.sortOrder}</td>
+											<td>
+												<form method="POST" action={`/api/admin/fields/${def.id}`} onsubmit="return confirm('Видалити поле і всі його значення?')">
+													<input type="hidden" name="intent" value="delete" />
+													<button type="submit" class="btn btn--ghost" style="padding: 6px 12px; font-size: 12px;">
+														Видалити
+													</button>
+												</form>
+											</td>
+										</tr>
+									))}
+								</tbody>
+							</table>
+						</div>
+					)}
+
+					<details>
+						<summary style="cursor: pointer; font-family: var(--font-mono); font-size: 13px; color: var(--accent);">
+							+ Нове поле для «{entityLabels[entity]}»
+						</summary>
+						<form
+							method="POST"
+							action="/api/admin/fields"
+							class="card"
+							style="padding: 18px; max-width: 480px; margin-top: 16px; display: flex; flex-direction: column; gap: 12px;"
+						>
+							<input type="hidden" name="entity" value={entity} />
+							<div class="field">
+								<label>Назва поля</label>
+								<input type="text" name="label" required placeholder="напр. Домен сайту" />
+							</div>
+							<div class="field">
+								<label>Тип</label>
+								<select name="type">
+									{Object.entries(fieldTypeLabels).map(([value, label]) => (
+										<option value={value}>{label}</option>
+									))}
+								</select>
+							</div>
+							<div class="field">
+								<label>Варіанти (для типу «Список», через кому)</label>
+								<input type="text" name="options" placeholder="варіант 1, варіант 2, варіант 3" />
+							</div>
+							<div class="field">
+								<label>Порядок показу (число, менше — вище)</label>
+								<input type="number" name="sortOrder" value="0" />
+							</div>
+							<label style="display: flex; align-items: center; gap: 8px; font-size: 14px;">
+								<input type="checkbox" name="required" value="1" style="width: 16px; height: 16px;" />
+								Обов'язкове поле
+							</label>
+							<button type="submit" class="btn btn--primary" style="align-self: flex-start;">
+								Додати поле
+							</button>
+						</form>
+					</details>
+				</section>
+			);
+		})
+	}
+</AppLayout>

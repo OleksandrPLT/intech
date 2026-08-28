@@ -1,0 +1,108 @@
+---
+import BaseLayout from '../../../layouts/BaseLayout.astro';
+import NewsCover from '../../../components/NewsCover.astro';
+import ShareButton from '../../../components/ShareButton.astro';
+import NewsComments from '../../../components/NewsComments.astro';
+import { getNewsItem } from '../../../data/news';
+import { useTranslations, localeUrl } from '../../../i18n/utils';
+
+const lang = 'et' as const;
+const t = useTranslations(lang);
+const { slug } = Astro.params;
+const item = slug ? getNewsItem(slug) : undefined;
+
+if (!item) {
+	return Astro.redirect(localeUrl(lang, '/news'));
+}
+
+const paragraphs = item.body[lang].split('\n\n');
+const seoTitle = item.metaTitle[lang] || item.title[lang];
+const seoDescription = item.metaDescription[lang] || item.excerpt[lang];
+---
+
+<BaseLayout lang={lang} title={`${seoTitle} — intech.org.ua`} description={seoDescription}>
+	<section class="section post-hero">
+		<div class="container">
+			<a href={localeUrl(lang, '/news')} class="back-link">← {t('news.back')}</a>
+			<NewsCover image={item.image} icon={item.icon} title={item.title[lang]} />
+			<div class="post-hero__row">
+				<time class="post-hero__date" datetime={item.date}>
+					{new Date(item.date).toLocaleDateString('et-EE', { year: 'numeric', month: 'long', day: 'numeric' })}
+				</time>
+				<ShareButton title={item.title[lang]} label={t('news.share')} copiedLabel={t('news.linkCopied')} />
+			</div>
+			<h1>{item.title[lang]}</h1>
+		</div>
+	</section>
+
+	<section class="section section--tight">
+		<div class="container post-body">
+			{paragraphs.map((p) => <p>{p}</p>)}
+		</div>
+	</section>
+
+	<section class="section section--tight">
+		<div class="container">
+			<NewsComments slug={item.slug} lang={lang} />
+		</div>
+	</section>
+</BaseLayout>
+
+<style>
+	.post-hero {
+		padding-bottom: 0;
+	}
+
+	.back-link {
+		display: inline-block;
+		font-family: var(--font-mono);
+		font-size: 13px;
+		color: var(--muted);
+		margin-bottom: 28px;
+	}
+
+	.back-link:hover {
+		color: var(--accent);
+	}
+
+	.post-hero :global(.news-cover) {
+		max-width: 760px;
+		margin-bottom: 24px;
+	}
+
+	.post-hero__row {
+		display: flex;
+		align-items: center;
+		justify-content: space-between;
+		gap: 16px;
+		max-width: 760px;
+		margin-bottom: 12px;
+	}
+
+	.post-hero__date {
+		font-family: var(--font-mono);
+		font-size: 13px;
+		color: var(--muted);
+	}
+
+	h1 {
+		font-size: clamp(28px, 4vw, 42px);
+		max-width: 760px;
+	}
+
+	.post-body {
+		max-width: 680px;
+	}
+
+	.post-body p {
+		font-size: 17px;
+		color: var(--paper);
+	}
+
+	@media (max-width: 560px) {
+		.post-hero__row {
+			flex-direction: column;
+			align-items: flex-start;
+		}
+	}
+</style>

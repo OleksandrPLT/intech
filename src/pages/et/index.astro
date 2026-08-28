@@ -1,0 +1,179 @@
+---
+import BaseLayout from '../../layouts/BaseLayout.astro';
+import ServiceCard from '../../components/ServiceCard.astro';
+import TechBackdrop from '../../components/TechBackdrop.astro';
+import NewsSection from '../../components/NewsSection.astro';
+import PartnersSection from '../../components/PartnersSection.astro';
+import KursorSection from '../../components/KursorSection.astro';
+import { getServices } from '../../data/services';
+import { useTranslations, localeUrl } from '../../i18n/utils';
+
+const lang = 'et' as const;
+const t = useTranslations(lang);
+const services = getServices();
+
+const approachItems = [0, 1, 2] as const;
+---
+
+<BaseLayout lang={lang} title={t('meta.home.title')} description={t('meta.home.description')}>
+	<section class="hero section">
+		<TechBackdrop />
+		<div class="container hero__inner">
+			<span class="eyebrow">{t('home.hero.eyebrow')}</span>
+			<h1 class="hero__title">{t('home.hero.title')}</h1>
+			<p class="hero__lede">{t('home.hero.lede')}</p>
+			<div class="hero__actions">
+				<a href={localeUrl(lang, '/contact')} class="btn btn--primary">{t('home.hero.ctaPrimary')}</a>
+				<a href={localeUrl(lang, '/services')} class="btn btn--ghost">{t('home.hero.ctaSecondary')}</a>
+			</div>
+		</div>
+	</section>
+
+	<section class="section section--tight">
+		<div class="container">
+			<span class="eyebrow">{t('home.approach.eyebrow')}</span>
+			<h2>{t('home.approach.title')}</h2>
+			<div class="approach-grid">
+				{
+					approachItems.map((i) => (
+						<div class="approach-item">
+							<span class="approach-item__index">0{i + 1}</span>
+							<h3>{t(`home.approach.items.${i}.title` as any)}</h3>
+							<p>{t(`home.approach.items.${i}.text` as any)}</p>
+						</div>
+					))
+				}
+			</div>
+		</div>
+	</section>
+
+	<section class="section">
+		<div class="container">
+			<span class="eyebrow">{t('home.services.eyebrow')}</span>
+			<h2>{t('home.services.title')}</h2>
+			<div class="services-grid">
+				{services.map((service) => <ServiceCard service={service} lang={lang} />)}
+			</div>
+		</div>
+	</section>
+
+	<KursorSection lang={lang} />
+
+	<PartnersSection lang={lang} />
+
+	<NewsSection lang={lang} />
+
+	<section class="section section--tight">
+		<div class="container cta-card card">
+			<div>
+				<h2>{t('home.cta.title')}</h2>
+				<p>{t('home.cta.text')}</p>
+			</div>
+			<a href={localeUrl(lang, '/contact')} class="btn btn--primary">{t('home.cta.button')}</a>
+		</div>
+	</section>
+</BaseLayout>
+
+<style>
+	.hero {
+		padding-top: 88px;
+		border-bottom: 1px solid var(--border);
+		position: relative;
+		overflow: hidden;
+	}
+
+	.hero__inner {
+		max-width: 760px;
+		position: relative;
+		z-index: 1;
+	}
+
+	.hero__title {
+		font-size: clamp(36px, 5.4vw, 60px);
+		margin-top: 20px;
+	}
+
+	.hero__lede {
+		font-size: 18px;
+		max-width: 620px;
+	}
+
+	.hero__actions {
+		display: flex;
+		gap: 16px;
+		margin-top: 32px;
+		flex-wrap: wrap;
+	}
+
+	h2 {
+		font-size: clamp(26px, 3.4vw, 36px);
+		margin-top: 12px;
+		margin-bottom: 40px;
+		max-width: 560px;
+	}
+
+	.approach-grid {
+		display: grid;
+		grid-template-columns: repeat(3, 1fr);
+		gap: 32px;
+	}
+
+	.approach-item__index {
+		display: block;
+		font-family: var(--font-mono);
+		color: var(--accent);
+		font-size: 14px;
+		margin-bottom: 16px;
+	}
+
+	.approach-item h3 {
+		font-size: 19px;
+		margin-bottom: 10px;
+	}
+
+	.approach-item p {
+		font-size: 15px;
+		margin: 0;
+	}
+
+	.services-grid {
+		display: grid;
+		grid-template-columns: repeat(3, 1fr);
+		gap: 24px;
+	}
+
+	.cta-card {
+		display: flex;
+		align-items: center;
+		justify-content: space-between;
+		gap: 24px;
+		padding: 48px;
+		flex-wrap: wrap;
+	}
+
+	.cta-card h2 {
+		margin-bottom: 8px;
+		font-size: 28px;
+	}
+
+	.cta-card p {
+		margin: 0;
+	}
+
+	@media (max-width: 860px) {
+		.approach-grid,
+		.services-grid {
+			grid-template-columns: 1fr 1fr;
+		}
+	}
+
+	@media (max-width: 620px) {
+		.approach-grid,
+		.services-grid {
+			grid-template-columns: 1fr;
+		}
+		.cta-card {
+			padding: 32px;
+		}
+	}
+</style>

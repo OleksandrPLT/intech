@@ -1,0 +1,39 @@
+---
+import AppLayout from '../../../../../layouts/AppLayout.astro';
+import { getServices } from '../../../../../data/services';
+
+const user = Astro.locals.user!;
+const items = getServices();
+---
+
+<AppLayout user={user} title="Послуги">
+	<div class="app-header">
+		<h1>Послуги</h1>
+	</div>
+	<p style="color: var(--muted); margin-top: -20px; margin-bottom: 16px; font-size: 14px;">
+		Список фіксований (8 послуг) — тут можна відредагувати текст кожної трьома мовами.
+	</p>
+
+	<div class="card table-wrap">
+		<table class="data-table">
+			<thead>
+				<tr>
+					<th>Назва (UA)</th>
+					<th>Slug</th>
+				</tr>
+			</thead>
+			<tbody>
+				{
+					items.map((item) => (
+						<tr>
+							<td>
+								<a href={`/app/admin/content/services/${item.id}`}>{item.uk.title}</a>
+							</td>
+							<td style="font-family: var(--font-mono); font-size: 12px; color: var(--muted);">{item.slug}</td>
+						</tr>
+					))
+				}
+			</tbody>
+		</table>
+	</div>
+</AppLayout>

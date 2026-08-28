@@ -1,0 +1,164 @@
+---
+import { eq } from 'drizzle-orm';
+import AppLayout from '../../../../../layouts/AppLayout.astro';
+import ContractCard from '../../../../../components/ContractCard.astro';
+import { db } from '../../../../../db/client';
+import { projects, users } from '../../../../../db/schema';
+import { countries } from '../../../../../lib/countries';
+import { getSiteSetting } from '../../../../../lib/siteSettings';
+import { resolvePayer } from '../../../../../lib/payerInfo';
+import { contractTemplate, contractVersionLabels, type ContractVersion } from '../../../../../lib/contractTemplates';
+
+const user = Astro.locals.user!;
+const projectId = Number(Astro.params.id);
+
+const project = db.select().from(projects).where(eq(projects.id, projectId)).get();
+if (!project) return Astro.redirect('/app/admin/projects');
+
+const client = db.select().from(users).where(eq(users.id, project.clientId)).get();
+const countryName = countries.find((c) => c.code === client?.country)?.name ?? client?.country ?? '';
+
+const q = Astro.url.searchParams;
+const versionParam = q.get('version');
+const version: ContractVersion =
+	versionParam === 'uk' || versionParam === 'en' || versionParam === 'et'
+		? versionParam
+		: client?.country === 'EE'
+			? 'et'
+			: client?.country === 'UA'
+				? 'uk'
+				: 'en';
+
+const placeDefaults: Record<ContractVersion, string> = {
+	uk: 'м. Полтава, Україна',
+	et: 'Poltava, Ukraina',
+	en: 'Poltava, Ukraine',
+};
+const executorNameDefaults: Record<ContractVersion, string> = {
+	uk: 'Олександр Левков',
+	et: 'Oleksandr Levkov',
+	en: 'Oleksandr Levkov',
+};
+const dateLocale: Record<ContractVersion, string> = { uk: 'uk-UA', et: 'et-EE', en: 'en-GB' };
+
+const today = new Date().toISOString().slice(0, 10);
+const contractDate = q.get('date') || today;
+
+const payer = resolvePayer(project, client, countryName);
+const payerDetailsDefault = payer.lines.join(', ');
+
+const data = {
+	contractNumber: q.get('number') || `CTR-${String(project.id).padStart(4, '0')}-${today.replace(/-/g, '')}`,
+	date: new Date(contractDate).toLocaleDateString(dateLocale[version]),
+	place: q.get('place') || placeDefaults[version],
+	executorName: q.get('executorName') || executorNameDefaults[version],
+	executorDetails: q.get('executorDetails') || '',
+	executorEmail: q.get('executorEmail') || getSiteSetting('contact.email', ''),
+	payerName: q.get('payerName') || payer.name,
+	payerDetails: q.get('payerDetails') || payerDetailsDefault,
+	payerEmail: q.get('payerEmail') || payer.email,
+	subject: q.get('subject') || project.description || project.name,
+	amount: q.get('amount') || '',
+	currency: q.get('currency') || 'UAH',
+};
+
+const doc = contractTemplate(version, data);
+
+// See receipt.astro for why: a separate render path with no AppLayout at
+// all for PDF/print, instead of relying on @media print to hide the
+// sidebar (which wasn't reliably clean enough).
+const bare = Astro.url.searchParams.get('bare') === '1';
+---
+
+{
+	bare ? (
+		<html lang="uk">
+			<head>
+				<meta charset="utf-8" />
+				<title>{doc.docTitle}</title>
+			</head>
+			<body>
+				<ContractCard doc={doc} data={data} />
+			</body>
+		</html>
+	) : (
+		<AppLayout user={user} title={doc.docTitle}>
+			<div class="app-header">
+				<h1>Договір — {project.name}</h1>
+				<div style="display: flex; gap: 10px;">
+					<a href={`/app/admin/projects/${project.id}`} class="btn btn--ghost">← До проекту</a>
+					<a href={`/api/admin/projects/${project.id}/contract-pdf${Astro.url.search}`} class="btn btn--primary">Завантажити PDF</a>
+				</div>
+			</div>
+
+			<details class="card" open style="padding: 18px; margin-bottom: 20px; max-width: 900px;">
+				<summary style="cursor: pointer; font-size: 14px; color: var(--accent); font-family: var(--font-mono);">Дані договору (редагувати)</summary>
+				<form method="GET" class="form-grid" style="margin-top: 16px;">
+					<div class="field">
+						<label for="version">Версія</label>
+						<select id="version" name="version">
+							{(['uk', 'et', 'en'] as const).map((v) => (
+								<option value={v} selected={v === version}>{contractVersionLabels[v]}</option>
+							))}
+						</select>
+					</div>
+					<div class="field">
+						<label for="number">Номер договору</label>
+						<input type="text" id="number" name="number" value={data.contractNumber} />
+					</div>
+					<div class="field">
+						<label for="date">Дата</label>
+						<input type="date" id="date" name="date" value={contractDate} />
+					</div>
+					<div class="field">
+						<label for="place">Місце укладання</label>
+						<input type="text" id="place" name="place" value={data.place} />
+					</div>
+					<div class="field">
+						<label for="executorName">Виконавець — назва/ім'я</label>
+						<input type="text" id="executorName" name="executorName" value={data.executorName} />
+					</div>
+					<div class="field">
+						<label for="executorDetails">Виконавець — реквізити</label>
+						<input type="text" id="executorDetails" name="executorDetails" value={data.executorDetails} placeholder="адреса, реєстраційний номер…" />
+					</div>
+					<div class="field">
+						<label for="executorEmail">Виконавець — email</label>
+						<input type="email" id="executorEmail" name="executorEmail" value={data.executorEmail} />
+					</div>
+					<div class="field">
+						<label for="payerName">Замовник — назва/ім'я</label>
+						<input type="text" id="payerName" name="payerName" value={data.payerName} />
+					</div>
+					<div class="field">
+						<label for="payerDetails">Замовник — реквізити</label>
+						<input type="text" id="payerDetails" name="payerDetails" value={data.payerDetails} placeholder="адреса, країна, ЄДРПОУ/РНОКПП…" />
+					</div>
+					<div class="field">
+						<label for="payerEmail">Замовник — email</label>
+						<input type="email" id="payerEmail" name="payerEmail" value={data.payerEmail} />
+					</div>
+					<div class="field" style="grid-column: 1 / -1;">
+						<label for="subject">Предмет договору</label>
+						<textarea id="subject" name="subject">{data.subject}</textarea>
+					</div>
+					<div class="field">
+						<label for="amount">Сума</label>
+						<input type="text" id="amount" name="amount" value={data.amount} placeholder="1000" />
+					</div>
+					<div class="field">
+						<label for="currency">Валюта</label>
+						<select id="currency" name="currency">
+							<option value="UAH" selected={data.currency === 'UAH'}>UAH</option>
+							<option value="USD" selected={data.currency === 'USD'}>USD</option>
+							<option value="EUR" selected={data.currency === 'EUR'}>EUR</option>
+						</select>
+					</div>
+					<button type="submit" class="btn btn--primary" style="grid-column: 1 / -1; justify-self: start;">Оновити документ</button>
+				</form>
+			</details>
+
+			<ContractCard doc={doc} data={data} />
+		</AppLayout>
+	)
+}

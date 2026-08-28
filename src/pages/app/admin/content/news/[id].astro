@@ -1,0 +1,97 @@
+---
+import { eq } from 'drizzle-orm';
+import AppLayout from '../../../../../layouts/AppLayout.astro';
+import { db } from '../../../../../db/client';
+import { newsPosts, newsPostTranslations } from '../../../../../db/schema';
+
+const user = Astro.locals.user!;
+const id = Number(Astro.params.id);
+const post = db.select().from(newsPosts).where(eq(newsPosts.id, id)).get();
+
+if (!post) {
+	return Astro.redirect('/app/admin/content/news');
+}
+
+const translations = db.select().from(newsPostTranslations).where(eq(newsPostTranslations.postId, id)).all();
+const byLang = Object.fromEntries(translations.map((t) => [t.lang, t])) as Record<'uk' | 'en' | 'et', (typeof translations)[number]>;
+
+const saved = Astro.url.searchParams.get('saved');
+const error = Astro.url.searchParams.get('error');
+const icons = ['launch', 'globe', 'default'];
+---
+
+<AppLayout user={user} title={byLang.uk.title}>
+	<div class="app-header">
+		<h1>{byLang.uk.title}</h1>
+		<a href="/app/admin/content/news" class="btn btn--ghost">← Усі новини</a>
+	</div>
+
+	{saved && <p style="color: var(--accent); font-size: 14px; margin-bottom: 14px;">Збережено.</p>}
+	{error && <p class="form-error" style="margin-bottom: 14px; max-width: 640px;">Перевірте дату та фото (до 5 МБ).</p>}
+
+	<form method="POST" action={`/api/admin/news/${post.id}`} enctype="multipart/form-data" class="card" style="padding: 20px; max-width: 640px; display: flex; flex-direction: column; gap: 14px;">
+		<div style="display: flex; gap: 12px; align-items: flex-end;">
+			<div class="field" style="flex: 1;">
+				<label>Slug (незмінний): <span style="font-family: var(--font-mono); color: var(--paper);">{post.slug}</span></label>
+			</div>
+			<div class="field" style="flex: 1;">
+				<label for="date">Дата</label>
+				<input type="date" id="date" name="date" value={post.date} required />
+			</div>
+		</div>
+
+		<div class="field">
+			{post.image && <img src={post.image} alt="" style="max-width: 200px; border-radius: 8px; margin-bottom: 10px;" />}
+			<label for="image">Замінити фото обкладинки</label>
+			<input type="file" id="image" name="image" accept="image/*" />
+		</div>
+		<div class="field">
+			<label for="icon">Іконка (якщо без фото)</label>
+			<select id="icon" name="icon">
+				<option value="">— без іконки —</option>
+				{icons.map((i) => (
+					<option value={i} selected={i === post.icon}>{i}</option>
+				))}
+			</select>
+		</div>
+
+		{
+			(['uk', 'en', 'et'] as const).map((lang) => (
+				<details open={lang === 'uk'} class="card" style="padding: 16px;">
+					<summary style="cursor: pointer; font-family: var(--font-mono); font-size: 13px; color: var(--accent);">
+						{lang.toUpperCase()}
+					</summary>
+					<div style="display: flex; flex-direction: column; gap: 14px; margin-top: 16px;">
+						<div class="field">
+							<label for={`title_${lang}`}>Заголовок</label>
+							<input type="text" id={`title_${lang}`} name={`title_${lang}`} value={byLang[lang].title} required />
+						</div>
+						<div class="field">
+							<label for={`excerpt_${lang}`}>Короткий опис</label>
+							<textarea id={`excerpt_${lang}`} name={`excerpt_${lang}`} required>{byLang[lang].excerpt}</textarea>
+						</div>
+						<div class="field">
+							<label for={`body_${lang}`}>Текст</label>
+							<textarea id={`body_${lang}`} name={`body_${lang}`} rows="8" required>{byLang[lang].body}</textarea>
+						</div>
+						<div class="field">
+							<label for={`metaTitle_${lang}`}>SEO заголовок (необов'язково — інакше береться заголовок)</label>
+							<input type="text" id={`metaTitle_${lang}`} name={`metaTitle_${lang}`} value={byLang[lang].metaTitle ?? ''} />
+						</div>
+						<div class="field">
+							<label for={`metaDescription_${lang}`}>SEO опис (необов'язково — інакше береться короткий опис)</label>
+							<textarea id={`metaDescription_${lang}`} name={`metaDescription_${lang}`} rows="2">{byLang[lang].metaDescription ?? ''}</textarea>
+						</div>
+					</div>
+				</details>
+			))
+		}
+
+		<button type="submit" class="btn btn--primary" style="align-self: flex-start;">Зберегти</button>
+	</form>
+
+	<form method="POST" action={`/api/admin/news/${post.id}`} style="margin-top: 16px;" onsubmit="return confirm('Видалити пост?')">
+		<input type="hidden" name="intent" value="delete" />
+		<button type="submit" class="btn btn--ghost" style="color: #ff8a80;">Видалити пост</button>
+	</form>
+</AppLayout>

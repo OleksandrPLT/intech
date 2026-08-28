@@ -1,0 +1,38 @@
+---
+export const prerender = true;
+import BaseLayout from '../layouts/BaseLayout.astro';
+
+const lang = 'uk' as const;
+---
+
+<BaseLayout lang={lang} title="404 — intech.org.ua" description="Сторінку не знайдено.">
+	<section class="section not-found">
+		<div class="container">
+			<span class="eyebrow">404</span>
+			<h1>Такої сторінки немає</h1>
+			<p>Можливо, вона переїхала або посилання застаріло.</p>
+			<a href="/" class="btn btn--primary">На головну</a>
+		</div>
+	</section>
+</BaseLayout>
+
+<style>
+	.not-found {
+		padding-top: 120px;
+		padding-bottom: 120px;
+		text-align: center;
+	}
+
+	h1 {
+		margin-top: 16px;
+	}
+
+	.not-found p {
+		max-width: 420px;
+		margin: 0 auto 32px;
+	}
+
+	.not-found .btn {
+		justify-content: center;
+	}
+</style>

@@ -1,0 +1,134 @@
+---
+import { eq } from 'drizzle-orm';
+import { db } from '../db/client';
+import { users } from '../db/schema';
+import { verifyPassword } from '../lib/auth';
+import { createSession, getCurrentUser, defaultAppPath } from '../lib/session';
+import Logo from '../components/Logo.astro';
+import '../styles/global.css';
+
+const existingUser = getCurrentUser(Astro.cookies);
+if (existingUser) {
+	return Astro.redirect(defaultAppPath(existingUser.role));
+}
+
+const redirectParam = Astro.url.searchParams.get('redirect') || '';
+let error = '';
+
+if (Astro.request.method === 'POST') {
+	const formData = await Astro.request.formData();
+	const email = String(formData.get('email') || '')
+		.trim()
+		.toLowerCase();
+	const password = String(formData.get('password') || '');
+
+	const user = db.select().from(users).where(eq(users.email, email)).get();
+	const valid = user ? await verifyPassword(password, user.passwordHash) : false;
+
+	if (user && valid) {
+		createSession(user.id, Astro.cookies);
+		const dest = redirectParam && redirectParam.startsWith('/app') ? redirectParam : defaultAppPath(user.role);
+		return Astro.redirect(dest);
+	}
+
+	error = 'Невірний email або пароль.';
+}
+---
+
+<!doctype html>
+<html lang="uk">
+	<head>
+		<meta charset="utf-8" />
+		<meta name="viewport" content="width=device-width, initial-scale=1" />
+		<meta name="robots" content="noindex, nofollow" />
+		<script is:inline>
+			try {
+				if (localStorage.getItem('theme') === 'light') {
+					document.documentElement.setAttribute('data-theme', 'light');
+				}
+			} catch (e) {}
+		</script>
+		<link rel="icon" type="image/svg+xml" href="/favicon.svg" />
+		<title>Вхід — intech.org.ua</title>
+		<link rel="preconnect" href="https://fonts.googleapis.com" />
+		<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+		<link
+			rel="stylesheet"
+			href="https://fonts.googleapis.com/css2?family=Unbounded:wght@600;700;800&family=IBM+Plex+Sans:wght@400;500;600&family=IBM+Plex+Mono:wght@500;600&display=swap"
+		/>
+	</head>
+	<body class="login-body">
+		<div class="login-card card">
+			<Logo href="/" size="md" tagline />
+			<h1>Вхід у кабінет</h1>
+			<p class="login-hint">Для клієнтів та адміністрування проектів. Доступ надає адміністратор.</p>
+
+			{error && <p class="form-error">{error}</p>}
+
+			<form method="POST" class="login-form">
+				<div class="field">
+					<label for="email">Email</label>
+					<input type="email" id="email" name="email" required autofocus />
+				</div>
+				<div class="field">
+					<label for="password">Пароль</label>
+					<input type="password" id="password" name="password" required />
+				</div>
+				<button type="submit" class="btn btn--primary" style="justify-content: center;">Увійти</button>
+			</form>
+
+			<a href="/" class="login-back">← На головну</a>
+		</div>
+	</body>
+</html>
+
+<style>
+	.login-body {
+		margin: 0;
+		min-height: 100vh;
+		display: flex;
+		align-items: center;
+		justify-content: center;
+		background: var(--ink);
+		font-family: var(--font-body);
+		padding: 24px;
+	}
+
+	.login-card {
+		width: 100%;
+		max-width: 380px;
+		padding: 40px;
+		display: flex;
+		flex-direction: column;
+		gap: 8px;
+	}
+
+	.login-card h1 {
+		font-size: 22px;
+		margin: 24px 0 4px;
+	}
+
+	.login-hint {
+		font-size: 14px;
+		color: var(--muted);
+		margin: 0 0 20px;
+	}
+
+	.login-form {
+		display: flex;
+		flex-direction: column;
+		gap: 18px;
+	}
+
+	.login-back {
+		margin-top: 24px;
+		font-family: var(--font-mono);
+		font-size: 13px;
+		color: var(--muted);
+		text-align: center;
+	}
+
+	.login-back:hover {
+		color: var(--accent);
+	}
+</style>

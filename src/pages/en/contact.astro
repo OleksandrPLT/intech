@@ -1,0 +1,170 @@
+---
+import BaseLayout from '../../layouts/BaseLayout.astro';
+import { useTranslations } from '../../i18n/utils';
+import { getServices } from '../../data/services';
+import { getSiteSetting } from '../../lib/siteSettings';
+
+const lang = 'en' as const;
+const t = useTranslations(lang);
+const services = getServices();
+
+const EMAIL = getSiteSetting('contact.email', '[EMAIL]');
+const TELEGRAM = getSiteSetting('contact.telegram', '[TELEGRAM]');
+---
+
+<BaseLayout lang={lang} title={t('meta.contact.title')} description={t('meta.contact.description')}>
+	<section class="section contact">
+		<div class="container contact__inner">
+			<div class="contact__intro">
+				<span class="eyebrow">{t('contact.eyebrow')}</span>
+				<h1>{t('contact.title')}</h1>
+				<p>{t('contact.text')}</p>
+			</div>
+
+			<div class="contact__cards">
+				<a href={`mailto:${EMAIL}`} class="card contact-card">
+					<span class="contact-card__label">{t('contact.emailLabel')}</span>
+					<span class="contact-card__value">{EMAIL}</span>
+				</a>
+				<a href={`https://t.me/${TELEGRAM.replace(/[\[\]@]/g, '')}`} class="card contact-card">
+					<span class="contact-card__label">{t('contact.telegramLabel')}</span>
+					<span class="contact-card__value">{TELEGRAM}</span>
+				</a>
+				<div class="card contact-card contact-card--static">
+					<span class="contact-card__label">{t('contact.locationLabel')}</span>
+					<span class="contact-card__value">{t('contact.location')}</span>
+				</div>
+			</div>
+
+			<h2 class="contact__or">{t('contact.or')}</h2>
+
+			<p id="form-success" class="form-success" hidden>{t('contact.form.success')}</p>
+			<p id="form-error" class="form-error" style="max-width: 560px; margin-bottom: 20px;" hidden>{t('contact.form.error')}</p>
+
+			<form method="POST" action="/api/public/leads" class="card contact-form">
+				<div class="field">
+					<label for="name">{t('contact.form.name')}</label>
+					<input type="text" id="name" name="name" required />
+				</div>
+				<div class="field">
+					<label for="contact">{t('contact.form.contact')}</label>
+					<input type="text" id="contact" name="contact" required />
+				</div>
+				<div class="field">
+					<label for="service">{t('contact.form.service')}</label>
+					<select id="service" name="service">
+						<option value="">{t('contact.form.serviceEmpty')}</option>
+						{services.map((s) => <option value={s[lang].title}>{s[lang].title}</option>)}
+					</select>
+				</div>
+				<div class="field">
+					<label for="message">{t('contact.form.message')}</label>
+					<textarea id="message" name="message" />
+				</div>
+				<div class="hp-field" aria-hidden="true">
+					<label for="website">Website</label>
+					<input type="text" id="website" name="website" tabindex="-1" autocomplete="off" />
+				</div>
+				<button type="submit" class="btn btn--primary" style="align-self: flex-start;">{t('contact.form.submit')}</button>
+			</form>
+		</div>
+	</section>
+</BaseLayout>
+
+<script>
+	const params = new URLSearchParams(location.search);
+	if (params.get('sent') === '1') {
+		document.getElementById('form-success')?.removeAttribute('hidden');
+		document.querySelector('.contact-form')?.setAttribute('hidden', '');
+	} else if (params.get('error') === 'invalid') {
+		document.getElementById('form-error')?.removeAttribute('hidden');
+	}
+</script>
+
+<style>
+	.contact__intro {
+		max-width: 560px;
+		margin-bottom: 48px;
+	}
+
+	.contact__intro p {
+		font-size: 17px;
+	}
+
+	.contact__cards {
+		display: grid;
+		grid-template-columns: repeat(3, 1fr);
+		gap: 20px;
+		margin-bottom: 56px;
+	}
+
+	.contact-card {
+		display: flex;
+		flex-direction: column;
+		gap: 8px;
+		padding: 28px;
+		transition: border-color 0.15s ease;
+	}
+
+	a.contact-card:hover {
+		border-color: var(--accent);
+	}
+
+	.contact-card__label {
+		font-family: var(--font-mono);
+		font-size: 12px;
+		letter-spacing: 0.08em;
+		text-transform: uppercase;
+		color: var(--muted);
+	}
+
+	.contact-card__value {
+		font-size: 17px;
+		color: var(--paper);
+		word-break: break-word;
+	}
+
+	h1 {
+		font-size: clamp(30px, 4.4vw, 44px);
+		margin-top: 16px;
+	}
+
+	.contact__or {
+		font-size: 20px;
+		margin-bottom: 24px;
+	}
+
+	.form-success {
+		max-width: 560px;
+		padding: 16px 20px;
+		border: 1px solid var(--accent);
+		border-radius: var(--radius-sm);
+		background: color-mix(in srgb, var(--accent) 12%, var(--ink-soft));
+		color: var(--paper);
+		font-size: 14px;
+		margin-bottom: 24px;
+	}
+
+	.contact-form {
+		max-width: 560px;
+		padding: 32px;
+		display: flex;
+		flex-direction: column;
+		gap: 18px;
+	}
+
+	.hp-field {
+		position: absolute;
+		width: 1px;
+		height: 1px;
+		overflow: hidden;
+		opacity: 0;
+		pointer-events: none;
+	}
+
+	@media (max-width: 780px) {
+		.contact__cards {
+			grid-template-columns: 1fr;
+		}
+	}
+</style>

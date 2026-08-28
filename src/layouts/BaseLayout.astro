@@ -1,0 +1,89 @@
+---
+import Header from '../components/Header.astro';
+import Footer from '../components/Footer.astro';
+import '../styles/global.css';
+import { languages, type Lang } from '../i18n/ui';
+import { localizePath } from '../i18n/utils';
+
+interface Props {
+	lang: Lang;
+	title: string;
+	description: string;
+}
+
+const { lang, title, description } = Astro.props;
+const canonicalUrl = new URL(Astro.url.pathname, Astro.site);
+const ogImageUrl = new URL('/og-image.png', Astro.site);
+
+const alternates = (Object.keys(languages) as Lang[]).map((code) => ({
+	code,
+	href: new URL(localizePath(Astro.url.pathname, lang, code), Astro.site),
+}));
+
+const structuredData = {
+	'@context': 'https://schema.org',
+	'@type': 'Organization',
+	name: 'intech.org.ua',
+	url: 'https://intech.org.ua',
+	logo: new URL('/og-image.png', Astro.site).toString(),
+	address: {
+		'@type': 'PostalAddress',
+		addressLocality: 'Poltava',
+		addressCountry: 'UA',
+	},
+};
+---
+
+<!doctype html>
+<html lang={lang}>
+	<head>
+		<meta charset="utf-8" />
+		<meta name="viewport" content="width=device-width, initial-scale=1" />
+		<script is:inline>
+			// Applied before any CSS renders, so a saved "light" preference never
+			// flashes dark-then-light on load. Kept in perfect sync with the
+			// fallback logic in ThemeToggle.astro.
+			try {
+				if (localStorage.getItem('theme') === 'light') {
+					document.documentElement.setAttribute('data-theme', 'light');
+				}
+			} catch (e) {}
+		</script>
+		<link rel="icon" type="image/svg+xml" href="/favicon.svg" />
+		<link rel="canonical" href={canonicalUrl} />
+		<meta name="generator" content={Astro.generator} />
+
+		<title>{title}</title>
+		<meta name="description" content={description} />
+
+		{alternates.map((alt) => <link rel="alternate" hreflang={alt.code} href={alt.href} />)}
+		<link rel="alternate" hreflang="x-default" href={alternates[0].href} />
+
+		<meta property="og:type" content="website" />
+		<meta property="og:title" content={title} />
+		<meta property="og:description" content={description} />
+		<meta property="og:url" content={canonicalUrl} />
+		<meta property="og:image" content={ogImageUrl} />
+		<meta property="og:locale" content={lang} />
+		<meta name="twitter:card" content="summary_large_image" />
+		<meta name="twitter:title" content={title} />
+		<meta name="twitter:description" content={description} />
+		<meta name="twitter:image" content={ogImageUrl} />
+
+		<script type="application/ld+json" set:html={JSON.stringify(structuredData)} />
+
+		<link rel="preconnect" href="https://fonts.googleapis.com" />
+		<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+		<link
+			rel="stylesheet"
+			href="https://fonts.googleapis.com/css2?family=Unbounded:wght@600;700;800&family=IBM+Plex+Sans:wght@400;500;600&family=IBM+Plex+Mono:wght@500;600&display=swap"
+		/>
+	</head>
+	<body>
+		<Header lang={lang} />
+		<main>
+			<slot />
+		</main>
+		<Footer lang={lang} />
+	</body>
+</html>

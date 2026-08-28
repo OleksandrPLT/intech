@@ -1,0 +1,149 @@
+---
+import { eq, and, inArray, desc } from 'drizzle-orm';
+import AppLayout from '../../../../layouts/AppLayout.astro';
+import CustomFieldsForm from '../../../../components/CustomFieldsForm.astro';
+import ClientProfileFields from '../../../../components/ClientProfileFields.astro';
+import { db } from '../../../../db/client';
+import { users, projects, tickets } from '../../../../db/schema';
+import { getFieldDefs, getFieldValues } from '../../../../lib/customFields';
+import { projectStatusLabels, paymentStatusLabels } from '../../../../lib/labels';
+import { formatTicketNumber } from '../../../../lib/ticketNumber';
+import { ticketCategoryLabels } from '../../../../lib/ticketCategories';
+
+const user = Astro.locals.user!;
+const id = Number(Astro.params.id);
+const client = db.select().from(users).where(and(eq(users.id, id), eq(users.role, 'client'))).get();
+
+if (!client) {
+	return Astro.redirect('/app/admin/clients');
+}
+
+const clientFieldDefs = getFieldDefs('client');
+const fieldValues = getFieldValues('client', id);
+
+const clientProjects = db.select().from(projects).where(eq(projects.clientId, id)).all();
+const projectIds = clientProjects.map((p) => p.id);
+
+const activeTickets =
+	projectIds.length === 0
+		? []
+		: db
+				.select({
+					id: tickets.id,
+					subject: tickets.subject,
+					category: tickets.category,
+					number: tickets.number,
+					status: tickets.status,
+					projectName: projects.name,
+				})
+				.from(tickets)
+				.leftJoin(projects, eq(tickets.projectId, projects.id))
+				.where(and(inArray(tickets.projectId, projectIds), inArray(tickets.status, ['open', 'in_progress'])))
+				.orderBy(desc(tickets.updatedAt))
+				.all();
+
+const saved = Astro.url.searchParams.get('saved');
+const error = Astro.url.searchParams.get('error');
+---
+
+<AppLayout user={user} title={client.name}>
+	<div class="app-header">
+		<h1>{client.name}</h1>
+		<a href="/app/admin/clients" class="btn btn--ghost">← Усі клієнти</a>
+	</div>
+
+	{saved && <p style="color: var(--accent); font-size: 14px; margin-bottom: 14px;">Збережено.</p>}
+	{error && <p class="form-error" style="margin-bottom: 14px; max-width: 520px;">Перевірте ім'я та email.</p>}
+
+	<div class="profile-split" style="margin-bottom: 20px;">
+		<form method="POST" action={`/api/admin/clients/${client.id}`} class="card form-grid" style="padding: 18px;">
+			<h2 style="font-size: 15px; margin: 0; grid-column: 1 / -1;">Профіль</h2>
+			<div class="field">
+				<label for="name">Ім'я</label>
+				<input type="text" id="name" name="name" value={client.name} required />
+			</div>
+			<div class="field">
+				<label for="email">Email</label>
+				<input type="email" id="email" name="email" value={client.email} required />
+			</div>
+			<ClientProfileFields values={client} />
+			<CustomFieldsForm defs={clientFieldDefs} values={fieldValues} />
+			<button type="submit" class="btn btn--primary" style="grid-column: 1 / -1; justify-self: start;">Зберегти</button>
+		</form>
+
+		<div class="card" style="padding: 18px;">
+			<h2 style="font-size: 15px; margin: 0 0 16px;">Активні заявки</h2>
+			{
+				activeTickets.length === 0 ? (
+					<p style="color: var(--muted); font-size: 14px; margin: 0;">Немає активних тікетів.</p>
+				) : (
+					<div style="display: flex; flex-direction: column; gap: 10px;">
+						{activeTickets.map((t) => (
+							<a href={`/app/admin/tickets/${t.id}`} style="display: flex; justify-content: space-between; gap: 12px; font-size: 14px; color: var(--paper);">
+								<span>
+									<span class="badge badge--accent" style="font-family: var(--font-mono); margin-right: 8px;">
+										{formatTicketNumber(t.category, t.number)}
+									</span>
+									{t.subject}
+								</span>
+							</a>
+						))}
+					</div>
+				)
+			}
+		</div>
+	</div>
+
+	<h2 style="font-size: 15px; margin-bottom: 16px;">Проекти</h2>
+	<div class="card table-wrap">
+		<table class="data-table">
+			<thead>
+				<tr>
+					<th>Проект</th>
+					<th>Статус</th>
+					<th>Оплата</th>
+				</tr>
+			</thead>
+			<tbody>
+				{
+					clientProjects.length === 0 ? (
+						<tr>
+							<td colspan="3" style="color: var(--muted);">
+								Ще немає проектів. <a href="/app/admin/projects/new">Створити</a>.
+							</td>
+						</tr>
+					) : (
+						clientProjects.map((p) => (
+							<tr>
+								<td>
+									<a href={`/app/admin/projects/${p.id}`}>{p.name}</a>
+								</td>
+								<td>
+									<span class="badge">{projectStatusLabels[p.status] ?? p.status}</span>
+								</td>
+								<td>
+									<span class="badge badge--accent">{paymentStatusLabels[p.paymentStatus] ?? p.paymentStatus}</span>
+								</td>
+							</tr>
+						))
+					)
+				}
+			</tbody>
+		</table>
+	</div>
+</AppLayout>
+
+<style>
+	.profile-split {
+		display: grid;
+		grid-template-columns: minmax(420px, 2fr) 1fr;
+		gap: 16px;
+		align-items: start;
+	}
+
+	@media (max-width: 900px) {
+		.profile-split {
+			grid-template-columns: 1fr;
+		}
+	}
+</style>

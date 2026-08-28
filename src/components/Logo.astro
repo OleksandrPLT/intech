@@ -1,0 +1,179 @@
+---
+interface Props {
+	href?: string;
+	iconOnly?: boolean;
+	/** Show the ".org.ua" line under the wordmark. */
+	tagline?: boolean;
+	size?: 'sm' | 'md' | 'lg';
+}
+
+const { href = '/', iconOnly = false, tagline = false, size = 'md' } = Astro.props;
+---
+
+<a href={href} class:list={['logo', `logo--${size}`, { 'logo--tagline': tagline && !iconOnly }]} aria-label="intech.org.ua">
+	<span class="logo-icon" aria-hidden="true">
+		<span class="logo-bar">
+			<i class="logo-bar__top"></i>
+			<i class="logo-bar__bottom"></i>
+		</span>
+	</span>
+	{
+		!iconOnly && (
+			<span class="logo-text">
+				<span class="logo-word">
+					intech
+					<span class="logo-cursor" aria-hidden="true">
+						<i class="logo-cursor__top" />
+						<i class="logo-cursor__bottom" />
+					</span>
+				</span>
+				{tagline && <span class="logo-tagline">.ORG.UA</span>}
+			</span>
+		)
+	}
+</a>
+
+<style>
+	.logo {
+		display: inline-flex;
+		align-items: center;
+		gap: 0.6em;
+		color: var(--paper);
+	}
+
+	.logo--tagline {
+		align-items: flex-start;
+	}
+
+	.logo-icon {
+		flex: none;
+		display: flex;
+		align-items: center;
+		justify-content: center;
+		background: var(--ink-soft);
+		border-radius: 22%;
+	}
+
+	.logo-bar {
+		display: flex;
+		flex-direction: column;
+		border-radius: 3px;
+		overflow: hidden;
+	}
+
+	.logo-bar__top {
+		background: var(--accent);
+		flex: 3;
+		display: block;
+	}
+
+	.logo-bar__bottom {
+		background: var(--accent-secondary);
+		flex: 1;
+		display: block;
+	}
+
+	.logo-text {
+		display: inline-flex;
+		flex-direction: column;
+		gap: 0.2em;
+	}
+
+	.logo-word {
+		position: relative;
+		font-family: var(--font-display);
+		font-weight: 700;
+		line-height: 1;
+		display: inline-flex;
+		align-items: flex-end;
+	}
+
+	.logo-cursor {
+		display: inline-flex;
+		flex-direction: column;
+		margin-left: 0.14em;
+		margin-bottom: 0.08em;
+		border-radius: 2px;
+		overflow: hidden;
+	}
+
+	.logo-cursor__top {
+		background: var(--accent);
+		flex: 3;
+		display: block;
+	}
+
+	.logo-cursor__bottom {
+		background: var(--accent-secondary);
+		flex: 1;
+		display: block;
+	}
+
+	.logo-tagline {
+		font-family: var(--font-mono);
+		font-weight: 500;
+		color: var(--accent);
+		letter-spacing: 0.16em;
+	}
+
+	/* sizes */
+	.logo--sm .logo-icon {
+		width: 34px;
+		height: 34px;
+	}
+	.logo--sm .logo-bar {
+		width: 5px;
+		height: 22px;
+	}
+	.logo--sm .logo-word {
+		font-size: 19px;
+	}
+	.logo--sm .logo-cursor {
+		width: 3px;
+		height: 15px;
+	}
+	.logo--sm .logo-tagline {
+		font-size: 9px;
+	}
+
+	.logo--md .logo-icon {
+		width: 42px;
+		height: 42px;
+	}
+	.logo--md .logo-bar {
+		width: 6px;
+		height: 27px;
+	}
+	.logo--md .logo-word {
+		font-size: 23px;
+	}
+	.logo--md .logo-cursor {
+		width: 4px;
+		height: 18px;
+	}
+	.logo--md .logo-tagline {
+		font-size: 10px;
+	}
+
+	.logo--lg .logo-icon {
+		width: 96px;
+		height: 96px;
+		border-radius: 21px;
+	}
+	.logo--lg .logo-bar {
+		width: 15px;
+		height: 66px;
+		border-radius: 4px;
+	}
+	.logo--lg .logo-word {
+		font-size: 56px;
+	}
+	.logo--lg .logo-cursor {
+		width: 9px;
+		height: 42px;
+		border-radius: 2px;
+	}
+	.logo--lg .logo-tagline {
+		font-size: 15px;
+	}
+</style>

@@ -1,0 +1,131 @@
+---
+import Logo from '../components/Logo.astro';
+import ThemeToggle from '../components/ThemeToggle.astro';
+import NavIcon from '../components/NavIcon.astro';
+import '../styles/global.css';
+import type { SessionUser } from '../lib/session';
+
+interface Props {
+	user: SessionUser;
+	title: string;
+}
+
+const { user, title } = Astro.props;
+
+// Grouped so the sidebar reads as sections, not one long flat list —
+// group is null for items that sit above any heading (just the dashboard).
+const adminNav = [
+	{ group: null, items: [{ href: '/app/admin', label: 'Дашборд', icon: 'dashboard' }] },
+	{
+		group: 'CRM',
+		items: [
+			{ href: '/app/admin/clients', label: 'Клієнти', icon: 'clients' },
+			{ href: '/app/admin/projects', label: 'Проекти', icon: 'projects' },
+			{ href: '/app/admin/leads', label: 'Ліди', icon: 'leads' },
+			{ href: '/app/admin/finance', label: 'Фінанси', icon: 'finance' },
+		],
+	},
+	{
+		group: 'Підтримка',
+		items: [
+			{ href: '/app/admin/tickets', label: 'Тікети', icon: 'tickets' },
+			{ href: '/app/admin/comments', label: 'Коментарі', icon: 'comments' },
+		],
+	},
+	{
+		group: 'Контент',
+		items: [
+			{ href: '/app/admin/content/news', label: 'Новини', icon: 'news' },
+			{ href: '/app/admin/content/portfolio', label: 'Портфоліо', icon: 'portfolio' },
+			{ href: '/app/admin/content/services', label: 'Послуги', icon: 'services' },
+		],
+	},
+	{
+		group: 'Налаштування',
+		items: [
+			{ href: '/app/admin/api-keys', label: 'API-ключі', icon: 'api' },
+			{ href: '/app/admin/settings/site', label: 'Сайт', icon: 'settings' },
+			{ href: '/app/admin/settings/fields', label: 'Власні поля', icon: 'fields' },
+		],
+	},
+];
+
+const clientNav = [
+	{
+		group: null,
+		items: [
+			{ href: '/app/client', label: 'Мої проекти', icon: 'projects' },
+			{ href: '/app/client/tickets', label: 'Тікети', icon: 'tickets' },
+		],
+	},
+];
+
+const staffNav = [{ group: null, items: [{ href: '/app/staff', label: 'Мої задачі', icon: 'tasks' }] }];
+
+const nav = user.role === 'admin' ? adminNav : user.role === 'staff' ? staffNav : clientNav;
+const path = Astro.url.pathname;
+---
+
+<!doctype html>
+<html lang="uk">
+	<head>
+		<meta charset="utf-8" />
+		<meta name="viewport" content="width=device-width, initial-scale=1" />
+		<meta name="robots" content="noindex, nofollow" />
+		<script is:inline>
+			try {
+				if (localStorage.getItem('theme') === 'light') {
+					document.documentElement.setAttribute('data-theme', 'light');
+				}
+			} catch (e) {}
+		</script>
+		<link rel="icon" type="image/svg+xml" href="/favicon.svg" />
+		<title>{title} — Кабінет intech.org.ua</title>
+		<link rel="preconnect" href="https://fonts.googleapis.com" />
+		<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+		<link
+			rel="stylesheet"
+			href="https://fonts.googleapis.com/css2?family=Unbounded:wght@600;700;800&family=IBM+Plex+Sans:wght@400;500;600&family=IBM+Plex+Mono:wght@500;600&display=swap"
+		/>
+	</head>
+	<body>
+		<div class="app-shell">
+			<aside class="app-sidebar">
+				<Logo href="/app" size="sm" iconOnly />
+
+				<nav class="app-sidebar__nav">
+					{
+						nav.map((section) => (
+							<div class="app-sidebar__group">
+								{section.group && <span class="app-sidebar__group-label">{section.group}</span>}
+								{section.items.map((item) => (
+									<a href={item.href} class:list={{ active: path === item.href }}>
+										<NavIcon name={item.icon} />
+										{item.label}
+									</a>
+								))}
+							</div>
+						))
+					}
+				</nav>
+
+				<div style="margin-top: auto; display: flex; flex-direction: column; gap: 8px;">
+					<ThemeToggle size="sm" />
+					<a href="/app/settings/profile" style="display: flex; align-items: center; justify-content: space-between; gap: 8px; font-size: 13px; color: var(--paper); padding: 2px 0;">
+						{user.name}
+						<span class="badge">{user.role === 'admin' ? 'Адмін' : user.role === 'staff' ? 'Команда' : 'Клієнт'}</span>
+					</a>
+					<form method="POST" action="/api/auth/logout">
+						<button type="submit" class="btn btn--ghost" style="width: 100%; justify-content: center; padding: 8px 14px; font-size: 13px;">
+							Вийти
+						</button>
+					</form>
+				</div>
+			</aside>
+
+			<main class="app-main">
+				<slot />
+			</main>
+		</div>
+	</body>
+</html>

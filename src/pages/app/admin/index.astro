@@ -1,0 +1,107 @@
+---
+import { desc, eq, sql } from 'drizzle-orm';
+import AppLayout from '../../../layouts/AppLayout.astro';
+import { db } from '../../../db/client';
+import { users, projects, tickets, leads } from '../../../db/schema';
+
+const user = Astro.locals.user!;
+
+const clientCount = db.select({ count: sql<number>`count(*)` }).from(users).where(eq(users.role, 'client')).get()!.count;
+const activeProjects = db
+	.select({ count: sql<number>`count(*)` })
+	.from(projects)
+	.where(sql`${projects.status} != 'done'`)
+	.get()!.count;
+const openTickets = db
+	.select({ count: sql<number>`count(*)` })
+	.from(tickets)
+	.where(sql`${tickets.status} in ('open', 'in_progress')`)
+	.get()!.count;
+const openLeads = db
+	.select({ count: sql<number>`count(*)` })
+	.from(leads)
+	.where(sql`${leads.stage} not in ('won', 'lost')`)
+	.get()!.count;
+
+const recentTickets = db
+	.select({
+		id: tickets.id,
+		subject: tickets.subject,
+		status: tickets.status,
+		updatedAt: tickets.updatedAt,
+		projectName: projects.name,
+	})
+	.from(tickets)
+	.leftJoin(projects, eq(tickets.projectId, projects.id))
+	.orderBy(desc(tickets.updatedAt))
+	.limit(6)
+	.all();
+
+const statusLabels: Record<string, string> = {
+	open: 'Відкрито',
+	in_progress: 'В роботі',
+	resolved: 'Вирішено',
+	closed: 'Закрито',
+};
+---
+
+<AppLayout user={user} title="Дашборд">
+	<div class="app-header">
+		<h1>Дашборд</h1>
+	</div>
+
+	<div class="stat-grid">
+		<div class="card stat-card">
+			<div class="stat-card__value">{clientCount}</div>
+			<div class="stat-card__label">Клієнтів</div>
+		</div>
+		<div class="card stat-card">
+			<div class="stat-card__value">{activeProjects}</div>
+			<div class="stat-card__label">Активних проектів</div>
+		</div>
+		<div class="card stat-card">
+			<div class="stat-card__value">{openTickets}</div>
+			<div class="stat-card__label">Відкритих тікетів</div>
+		</div>
+		<div class="card stat-card">
+			<div class="stat-card__value">{openLeads}</div>
+			<div class="stat-card__label">Лідів у роботі</div>
+		</div>
+	</div>
+
+	<h2 style="font-size: 16px; margin-bottom: 16px;">Останні тікети</h2>
+	<div class="card table-wrap">
+		<table class="data-table">
+			<thead>
+				<tr>
+					<th>Тема</th>
+					<th>Проект</th>
+					<th>Статус</th>
+				</tr>
+			</thead>
+			<tbody>
+				{
+					recentTickets.length === 0 ? (
+						<tr>
+							<td colspan="3" style="color: var(--muted);">
+								Тікетів ще немає.
+							</td>
+						</tr>
+					) : (
+						recentTickets.map((t) => (
+							<tr>
+								<td>
+									<a href={`/app/admin/tickets/${t.id}`}>{t.subject}</a>
+								</td>
+								<td>{t.projectName}</td>
+								<td>
+									<span class="badge">{statusLabels[t.status] ?? t.status}</span>
+								</td>
+							</tr>
+						))
+					)
+				}
+			</tbody>
+		</table>
+	</div>
+</AppLayout>

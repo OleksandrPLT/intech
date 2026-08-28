@@ -1,0 +1,101 @@
+---
+// Standalone mark for "Kursor" — the in-house platform powering
+// intech.org.ua (CRM, tickets, CMS, client cabinet). Deliberately reuses
+// the brand's existing two-tone accent/flag-blue palette and monospace
+// accent face (see Logo.astro's cursor bar) rather than inventing a new
+// visual language: Kursor *is* that motif, named and given its own mark.
+interface Props {
+	size?: 'sm' | 'md' | 'lg';
+}
+
+const { size = 'md' } = Astro.props;
+---
+
+<span class:list={['kursor-mark', `kursor-mark--${size}`]} aria-hidden="true">
+	<span class="kursor-mark__glyph">&lt;</span>
+	<span class="kursor-mark__cursor"></span>
+</span>
+
+<style>
+	.kursor-mark {
+		flex: none;
+		display: inline-flex;
+		align-items: center;
+		justify-content: center;
+		background: var(--ink-soft);
+		border: 1px solid var(--border);
+		border-radius: 22%;
+	}
+
+	.kursor-mark__glyph {
+		font-family: var(--font-mono);
+		font-weight: 600;
+		line-height: 1;
+		color: var(--accent);
+	}
+
+	.kursor-mark__cursor {
+		background: var(--accent-secondary);
+		border-radius: 1px;
+		animation: kursor-blink 1.3s steps(1, end) infinite;
+	}
+
+	@keyframes kursor-blink {
+		0%,
+		49% {
+			opacity: 1;
+		}
+		50%,
+		100% {
+			opacity: 0.15;
+		}
+	}
+
+	@media (prefers-reduced-motion: reduce) {
+		.kursor-mark__cursor {
+			animation: none;
+			opacity: 1;
+		}
+	}
+
+	.kursor-mark--sm {
+		width: 34px;
+		height: 34px;
+	}
+	.kursor-mark--sm .kursor-mark__glyph {
+		font-size: 16px;
+	}
+	.kursor-mark--sm .kursor-mark__cursor {
+		width: 3px;
+		height: 14px;
+		margin-left: 3px;
+	}
+
+	.kursor-mark--md {
+		width: 48px;
+		height: 48px;
+	}
+	.kursor-mark--md .kursor-mark__glyph {
+		font-size: 22px;
+	}
+	.kursor-mark--md .kursor-mark__cursor {
+		width: 4px;
+		height: 19px;
+		margin-left: 4px;
+	}
+
+	.kursor-mark--lg {
+		width: 84px;
+		height: 84px;
+		border-radius: 20px;
+	}
+	.kursor-mark--lg .kursor-mark__glyph {
+		font-size: 38px;
+	}
+	.kursor-mark--lg .kursor-mark__cursor {
+		width: 7px;
+		height: 33px;
+		margin-left: 6px;
+		border-radius: 2px;
+	}
+</style>

@@ -1,0 +1,234 @@
+---
+// Shared between the full ticket page (src/pages/app/admin/tickets/[id].astro)
+// and its ?partial=1 fragment (fetched into the modal on the ticket list) —
+// one markup source so the two never drift apart. Tabs are pure CSS
+// (radio-input technique): the fragment is spliced into the modal via
+// innerHTML, where any <script> in it would never execute, so tab
+// switching can't depend on JS here. Styling for all of this lives in
+// global.css as plain classes for the same reason — a component-scoped
+// <style> tag never ships with the ?partial=1 fragment (see the
+// .ticket-detail__title/__meta rules already there).
+import TicketThread from './TicketThread.astro';
+import { ticketCategoryLabels } from '../lib/ticketCategories';
+import { ticketStatusLabels } from '../lib/labels';
+import { approvalStatusLabels } from '../lib/ticketApprovals';
+
+interface Approval {
+	id: number;
+	title: string;
+	note: string | null;
+	status: string;
+	decidedNote: string | null;
+	decidedAt: string | null;
+	createdAt: string;
+	requestedByName: string | null;
+}
+
+interface Event {
+	id: number;
+	label: string;
+	note: string | null;
+	createdAt: string;
+	actorName: string | null;
+}
+
+interface Props {
+	ticketId: number;
+	subject: string;
+	ticketNumber: string;
+	category: string;
+	projectId: number;
+	projectName: string;
+	messages: any[];
+	currentUserId: number;
+	isAdmin: boolean;
+	replyAction: string;
+	statusAction?: string;
+	currentStatus?: string;
+	approvals: Approval[];
+	events: Event[];
+	/** Full page already has an <h1> in the app-header — skip the duplicate there. */
+	showTitle?: boolean;
+	projectHref?: string;
+	emailSent?: string | null;
+	errorParam?: string | null;
+	/** Which tab to land on — 'thread' | 'approvals' | 'history' | 'email'. */
+	activeTab?: string | null;
+}
+
+const {
+	ticketId,
+	subject,
+	ticketNumber,
+	category,
+	projectName,
+	messages,
+	currentUserId,
+	isAdmin,
+	replyAction,
+	statusAction,
+	currentStatus,
+	approvals,
+	events,
+	showTitle = false,
+	projectHref,
+	emailSent = null,
+	errorParam = null,
+	activeTab = null,
+} = Astro.props;
+
+const tabsName = `ticket-tabs-${ticketId}`;
+const pendingApprovals = approvals.filter((a) => a.status === 'pending').length;
+
+// Land on the right tab after a redirect — either explicitly requested
+// (?tab=…) or inferred from which action's error/success we're showing.
+const resolvedTab =
+	activeTab ??
+	(errorParam === 'approval'
+		? 'approvals'
+		: errorParam === 'email' || errorParam === 'noclient' || emailSent !== null
+			? 'email'
+			: 'thread');
+---
+
+<div class="ticket-detail">
+	{showTitle && <h2 class="ticket-detail__title">{subject}</h2>}
+
+	<p class="ticket-detail__meta">
+		<span class="badge badge--accent" style="font-family: var(--font-mono);">{ticketNumber}</span>
+		<span class="badge">{ticketCategoryLabels[category] ?? category}</span>
+		{currentStatus && <span class="badge">{ticketStatusLabels[currentStatus] ?? currentStatus}</span>}
+		<span>
+			Проект:{' '}
+			{projectHref ? <a href={projectHref} style="color: var(--paper);">{projectName}</a> : projectName}
+		</span>
+	</p>
+
+	<div class="ticket-tabs">
+		<input type="radio" name={tabsName} id={`${tabsName}-thread`} class="ticket-tabs__radio" checked={resolvedTab === 'thread'} />
+		<input type="radio" name={tabsName} id={`${tabsName}-approvals`} class="ticket-tabs__radio" checked={resolvedTab === 'approvals'} />
+		<input type="radio" name={tabsName} id={`${tabsName}-history`} class="ticket-tabs__radio" checked={resolvedTab === 'history'} />
+		{
+			isAdmin && (
+				<input type="radio" name={tabsName} id={`${tabsName}-email`} class="ticket-tabs__radio" checked={resolvedTab === 'email'} />
+			)
+		}
+
+		<nav class="ticket-tabs__nav">
+			<label for={`${tabsName}-thread`}>Переписка</label>
+			<label for={`${tabsName}-approvals`}>
+				Погодження{pendingApprovals > 0 && <span class="badge badge--accent" style="margin-left: 6px;">{pendingApprovals}</span>}
+			</label>
+			<label for={`${tabsName}-history`}>Історія змін</label>
+			{isAdmin && <label for={`${tabsName}-email`}>Лист клієнту</label>}
+		</nav>
+
+		<div class="ticket-tabs__panel" data-panel={`${tabsName}-thread`}>
+			<TicketThread
+				messages={messages}
+				currentUserId={currentUserId}
+				isAdmin={isAdmin}
+				replyAction={replyAction}
+				statusAction={statusAction}
+				currentStatus={currentStatus}
+			/>
+		</div>
+
+		<div class="ticket-tabs__panel" data-panel={`${tabsName}-approvals`}>
+			{
+				errorParam === 'approval' && (
+					<p class="form-error" style="margin-bottom: 14px;">Вкажіть назву погодження.</p>
+				)
+			}
+			{
+				approvals.length === 0 ? (
+					<p style="color: var(--muted); font-size: 14px;">Погоджень ще немає.</p>
+				) : (
+					<div style="display: flex; flex-direction: column; gap: 10px; margin-bottom: 16px;">
+						{approvals.map((a) => (
+							<div class="card" style="padding: 14px 16px;">
+								<div style="display: flex; justify-content: space-between; align-items: flex-start; gap: 10px; flex-wrap: wrap;">
+									<div>
+										<strong style="font-size: 14px;">{a.title}</strong>
+										{a.note && <p style="font-size: 13px; margin: 4px 0 0;">{a.note}</p>}
+										<p style="font-size: 12px; color: var(--muted); margin: 4px 0 0;">Запросив: {a.requestedByName ?? '—'}</p>
+										{a.decidedNote && <p style="font-size: 12px; color: var(--muted); margin: 4px 0 0;">Коментар рішення: {a.decidedNote}</p>}
+									</div>
+									<span class={`badge ${a.status === 'approved' ? 'badge--accent' : a.status === 'rejected' ? 'badge--blue' : ''}`}>
+										{approvalStatusLabels[a.status] ?? a.status}
+									</span>
+								</div>
+								{a.status === 'pending' && (
+									<div style="margin-top: 10px; display: flex; gap: 8px; flex-wrap: wrap; align-items: center;">
+										<form method="POST" action={`/api/approvals/${a.id}/respond`}>
+											<input type="hidden" name="decision" value="approved" />
+											<button type="submit" class="btn btn--primary" style="padding: 6px 12px; font-size: 12px;">Погодити</button>
+										</form>
+										<form method="POST" action={`/api/approvals/${a.id}/respond`} style="display: flex; gap: 6px;">
+											<input type="hidden" name="decision" value="rejected" />
+											<input type="text" name="comment" placeholder="Причина (необов'язково)" style="font: inherit; font-size: 12px; background: var(--ink); color: var(--paper); border: 1px solid var(--border); border-radius: 8px; padding: 6px 10px;" />
+											<button type="submit" class="btn btn--ghost" style="padding: 6px 12px; font-size: 12px;">Відхилити</button>
+										</form>
+									</div>
+								)}
+							</div>
+						))}
+					</div>
+				)
+			}
+			<form method="POST" action={`/api/tickets/${ticketId}/approvals`} class="card" style="padding: 14px; display: flex; flex-direction: column; gap: 10px;">
+				<div class="field">
+					<label for={`${tabsName}-approval-title`}>Назва погодження</label>
+					<input type="text" id={`${tabsName}-approval-title`} name="title" required placeholder="напр. Підтвердити рахунок на 200$" />
+				</div>
+				<div class="field">
+					<label for={`${tabsName}-approval-note`}>Деталі (необов'язково)</label>
+					<textarea id={`${tabsName}-approval-note`} name="note" />
+				</div>
+				<button type="submit" class="btn btn--ghost" style="align-self: flex-start; padding: 7px 14px; font-size: 13px;">Запросити погодження</button>
+			</form>
+		</div>
+
+		<div class="ticket-tabs__panel" data-panel={`${tabsName}-history`}>
+			{
+				events.length === 0 ? (
+					<p style="color: var(--muted); font-size: 14px;">Змін ще не було.</p>
+				) : (
+					<ul class="ticket-history">
+						{events.map((e) => (
+							<li>
+								<span class="ticket-history__label">{e.label}</span>
+								<span class="ticket-history__meta">
+									{e.actorName ?? '—'} · {new Date(e.createdAt).toLocaleString('uk-UA')}
+								</span>
+								{e.note && <span class="ticket-history__note">{e.note}</span>}
+							</li>
+						))}
+					</ul>
+				)
+			}
+		</div>
+
+		{
+			isAdmin && (
+				<div class="ticket-tabs__panel" data-panel={`${tabsName}-email`}>
+					{errorParam === 'email' && <p class="form-error" style="margin-bottom: 14px;">Заповніть тему і текст листа.</p>}
+					{errorParam === 'noclient' && <p class="form-error" style="margin-bottom: 14px;">У проекту немає клієнтського акаунта з email.</p>}
+					{emailSent === '1' && <p style="color: var(--accent); font-size: 14px; margin-bottom: 14px;">Лист надіслано.</p>}
+					{emailSent === '0' && <p class="form-error" style="margin-bottom: 14px;">Не вдалося надіслати — див. деталі в "Історія змін".</p>}
+					<form method="POST" action={`/api/tickets/${ticketId}/email-client`} class="card" style="padding: 14px; display: flex; flex-direction: column; gap: 10px;">
+						<div class="field">
+							<label for={`${tabsName}-email-subject`}>Тема</label>
+							<input type="text" id={`${tabsName}-email-subject`} name="subject" required />
+						</div>
+						<div class="field">
+							<label for={`${tabsName}-email-body`}>Текст листа</label>
+							<textarea id={`${tabsName}-email-body`} name="body" required rows="6" />
+						</div>
+						<button type="submit" class="btn btn--primary" style="align-self: flex-start; padding: 9px 18px; font-size: 13px;">Надіслати клієнту</button>
+					</form>
+				</div>
+			)
+		}
+	</div>
+</div>

@@ -1,0 +1,91 @@
+# Example nginx server blocks for intech.org.ua + admin.intech.org.ua
+#
+# The site is server-rendered (Astro SSR, @astrojs/node standalone
+# adapter) because of /app (client cabinet + tickets) and /app/admin
+# (internal CRM) — nginx reverse-proxies everything to that Node process,
+# which itself still serves the prerendered marketing pages + static
+# assets efficiently. admin.intech.org.ua is the *same* app on the *same*
+# upstream — src/middleware.ts sends its bare "/" to /app; every deeper
+# path (/app/admin/..., /login, /api/...) already works from any hostname
+# pointed at this backend, so there's nothing else to configure app-side.
+#
+# Usage:
+#   1. npm run build
+#   2. rsync -avz --delete --exclude data/ . user@server:/var/www/intech.org.ua/
+#   3. On the server: npm ci --omit=dev, then run the app as a service
+#      (see deploy/intech.service.example) so it survives reboots/crashes.
+#   4. Copy this file to /etc/nginx/sites-available/intech.org.ua,
+#      adjust paths/domain, symlink into sites-enabled, reload nginx.
+#   5. Point admin.intech.org.ua at the server too (A/AAAA or CNAME —
+#      same target as the apex/www records).
+#   6. Issue one certificate covering all three names:
+#      `certbot --nginx -d intech.org.ua -d www.intech.org.ua -d admin.intech.org.ua`
+
+upstream intech_app {
+	server 127.0.0.1:4321;
+	keepalive 32;
+}
+
+server {
+	listen 80;
+	listen [::]:80;
+	server_name intech.org.ua www.intech.org.ua admin.intech.org.ua;
+	return 301 https://$host$request_uri;
+}
+
+server {
+	listen 443 ssl http2;
+	listen [::]:443 ssl http2;
+	server_name intech.org.ua www.intech.org.ua;
+
+	# ssl_certificate     /etc/letsencrypt/live/intech.org.ua/fullchain.pem;
+	# ssl_certificate_key /etc/letsencrypt/live/intech.org.ua/privkey.pem;
+
+	gzip on;
+	gzip_types text/css application/javascript image/svg+xml application/xml application/json;
+
+	client_max_body_size 4m;
+
+	# Long-lived caching for Astro's fingerprinted build assets.
+	location /_astro/ {
+		proxy_pass http://intech_app;
+		add_header Cache-Control "public, max-age=31536000, immutable";
+	}
+
+	location / {
+		proxy_pass http://intech_app;
+		proxy_http_version 1.1;
+		proxy_set_header Connection "";
+		proxy_set_header Host $host;
+		proxy_set_header X-Real-IP $remote_addr;
+		proxy_set_header X-Forwarded-For $proxy_add_x_forwarded_for;
+		proxy_set_header X-Forwarded-Proto $scheme;
+	}
+}
+
+server {
+	listen 443 ssl http2;
+	listen [::]:443 ssl http2;
+	server_name admin.intech.org.ua;
+
+	# Same cert as above (issued with -d admin.intech.org.ua included).
+	# ssl_certificate     /etc/letsencrypt/live/intech.org.ua/fullchain.pem;
+	# ssl_certificate_key /etc/letsencrypt/live/intech.org.ua/privkey.pem;
+
+	client_max_body_size 4m;
+
+	location /_astro/ {
+		proxy_pass http://intech_app;
+		add_header Cache-Control "public, max-age=31536000, immutable";
+	}
+
+	location / {
+		proxy_pass http://intech_app;
+		proxy_http_version 1.1;
+		proxy_set_header Connection "";
+		proxy_set_header Host $host;
+		proxy_set_header X-Real-IP $remote_addr;
+		proxy_set_header X-Forwarded-For $proxy_add_x_forwarded_for;
+		proxy_set_header X-Forwarded-Proto $scheme;
+	}
+}

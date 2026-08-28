@@ -1,0 +1,53 @@
+---
+import { eq } from 'drizzle-orm';
+import AppLayout from '../../../../layouts/AppLayout.astro';
+import TicketDetailContent from '../../../../components/TicketDetailContent.astro';
+import { db } from '../../../../db/client';
+import { tickets, projects } from '../../../../db/schema';
+import { canAccessTicket } from '../../../../lib/tickets';
+import { getTicketMessages } from '../../../../lib/ticketMessages';
+import { formatTicketNumber } from '../../../../lib/ticketNumber';
+import { listApprovals, listEvents } from '../../../../lib/ticketApprovals';
+
+const user = Astro.locals.user!;
+const id = Number(Astro.params.id);
+
+if (Number.isNaN(id) || !canAccessTicket(user, id)) {
+	return Astro.redirect('/app/client/tickets');
+}
+
+const ticket = db.select().from(tickets).where(eq(tickets.id, id)).get()!;
+const project = db.select().from(projects).where(eq(projects.id, ticket.projectId)).get();
+// Clients never receive internal notes — filtered at the query, not just hidden with CSS.
+const messages = getTicketMessages(id, { includeInternal: false });
+const ticketNumber = formatTicketNumber(ticket.category, ticket.number);
+const approvals = listApprovals(id);
+const events = listEvents(id);
+const errorParam = Astro.url.searchParams.get('error');
+const activeTab = Astro.url.searchParams.get('tab');
+---
+
+<AppLayout user={user} title={ticket.subject}>
+	<div class="app-header">
+		<h1>{ticket.subject}</h1>
+		<a href="/app/client/tickets" class="btn btn--ghost">← Усі тікети</a>
+	</div>
+
+	<TicketDetailContent
+		ticketId={ticket.id}
+		subject={ticket.subject}
+		ticketNumber={ticketNumber}
+		category={ticket.category}
+		projectId={ticket.projectId}
+		projectName={project?.name ?? '—'}
+		messages={messages as any}
+		currentUserId={user.id}
+		isAdmin={false}
+		replyAction={`/api/tickets/${ticket.id}/reply`}
+		currentStatus={ticket.status}
+		approvals={approvals}
+		events={events}
+		errorParam={errorParam}
+		activeTab={activeTab}
+	/>
+</AppLayout>

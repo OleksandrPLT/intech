@@ -1,0 +1,73 @@
+---
+import { eq } from 'drizzle-orm';
+import AppLayout from '../../../../../layouts/AppLayout.astro';
+import { db } from '../../../../../db/client';
+import { portfolioItems, portfolioItemTranslations } from '../../../../../db/schema';
+
+const user = Astro.locals.user!;
+const id = Number(Astro.params.id);
+const item = db.select().from(portfolioItems).where(eq(portfolioItems.id, id)).get();
+
+if (!item) {
+	return Astro.redirect('/app/admin/content/portfolio');
+}
+
+const translations = db.select().from(portfolioItemTranslations).where(eq(portfolioItemTranslations.itemId, id)).all();
+const byLang = Object.fromEntries(translations.map((t) => [t.lang, t])) as Record<'uk' | 'en' | 'et', (typeof translations)[number]>;
+
+const saved = Astro.url.searchParams.get('saved');
+const error = Astro.url.searchParams.get('error');
+---
+
+<AppLayout user={user} title={byLang.uk.title}>
+	<div class="app-header">
+		<h1>{byLang.uk.title}</h1>
+		<a href="/app/admin/content/portfolio" class="btn btn--ghost">← Усе портфоліо</a>
+	</div>
+
+	{saved && <p style="color: var(--accent); font-size: 14px; margin-bottom: 14px;">Збережено.</p>}
+	{error && <p class="form-error" style="margin-bottom: 14px; max-width: 640px;">Перевірте URL та лого (до 5 МБ).</p>}
+
+	<form method="POST" action={`/api/admin/portfolio/${item.id}`} enctype="multipart/form-data" class="card" style="padding: 20px; max-width: 640px; display: flex; flex-direction: column; gap: 14px;">
+		<div class="field">
+			<label for="url">URL сайту</label>
+			<input type="text" id="url" name="url" value={item.url} required />
+		</div>
+		<div class="field">
+			<label for="tags">Теги (через кому)</label>
+			<input type="text" id="tags" name="tags" value={item.tags ?? ''} />
+		</div>
+		<div class="field">
+			{item.logo && <img src={item.logo} alt="" style="max-width: 80px; border-radius: 8px; margin-bottom: 10px;" />}
+			<label for="logo">Замінити лого</label>
+			<input type="file" id="logo" name="logo" accept="image/*" />
+		</div>
+
+		{
+			(['uk', 'en', 'et'] as const).map((lang) => (
+				<details open={lang === 'uk'} class="card" style="padding: 16px;">
+					<summary style="cursor: pointer; font-family: var(--font-mono); font-size: 13px; color: var(--accent);">
+						{lang.toUpperCase()}
+					</summary>
+					<div style="display: flex; flex-direction: column; gap: 14px; margin-top: 16px;">
+						<div class="field">
+							<label for={`title_${lang}`}>Назва</label>
+							<input type="text" id={`title_${lang}`} name={`title_${lang}`} value={byLang[lang].title} required />
+						</div>
+						<div class="field">
+							<label for={`description_${lang}`}>Опис</label>
+							<textarea id={`description_${lang}`} name={`description_${lang}`} required>{byLang[lang].description}</textarea>
+						</div>
+					</div>
+				</details>
+			))
+		}
+
+		<button type="submit" class="btn btn--primary" style="align-self: flex-start;">Зберегти</button>
+	</form>
+
+	<form method="POST" action={`/api/admin/portfolio/${item.id}`} style="margin-top: 16px;" onsubmit="return confirm('Видалити проект?')">
+		<input type="hidden" name="intent" value="delete" />
+		<button type="submit" class="btn btn--ghost" style="color: #ff8a80;">Видалити проект</button>
+	</form>
+</AppLayout>

@@ -1,0 +1,114 @@
+---
+import AppLayout from '../../../../layouts/AppLayout.astro';
+import { db } from '../../../../db/client';
+import { projects } from '../../../../db/schema';
+import { listAllApiKeys } from '../../../../lib/apiKeys';
+
+const user = Astro.locals.user!;
+const keys = listAllApiKeys();
+const allProjects = db.select().from(projects).all();
+
+const newKey = Astro.cookies.get('new_api_key')?.value;
+if (newKey) {
+	Astro.cookies.delete('new_api_key', { path: '/app/admin/api-keys' });
+}
+
+const error = Astro.url.searchParams.get('error');
+---
+
+<AppLayout user={user} title="API-ключі">
+	<div class="app-header">
+		<h1>API-ключі</h1>
+	</div>
+	<p style="color: var(--muted); margin-top: -20px; margin-bottom: 18px; font-size: 14px; max-width: 620px;">
+		Кожен ключ прив'язаний до одного проекту — дайте його клієнту, щоб його
+		сайт чи застосунок міг створювати й читати тікети по цьому проекту напряму,
+		без входу в кабінет. Приклади запитів — у README (розділ "Зовнішнє API").
+	</p>
+
+	{
+		newKey && (
+			<div class="form-error" style="border-color: var(--accent); background: color-mix(in srgb, var(--accent) 14%, var(--ink-soft)); color: var(--paper); margin-bottom: 16px; max-width: 640px; word-break: break-all; font-family: var(--font-mono); font-size: 13px;">
+				Новий ключ (збережіть зараз, ще раз він не покажеться): <br />
+				<strong>{newKey}</strong>
+			</div>
+		)
+	}
+	{error && <p class="form-error" style="margin-bottom: 16px; max-width: 640px;">Оберіть проект.</p>}
+
+	<div class="card table-wrap" style="margin-bottom: 20px;">
+		<table class="data-table">
+			<thead>
+				<tr>
+					<th>Назва</th>
+					<th>Проект</th>
+					<th>Ключ</th>
+					<th>Створено</th>
+					<th>Статус</th>
+					<th />
+				</tr>
+			</thead>
+			<tbody>
+				{
+					keys.length === 0 ? (
+						<tr>
+							<td colspan="6" style="color: var(--muted);">
+								Ще немає жодного ключа.
+							</td>
+						</tr>
+					) : (
+						keys.map((k) => (
+							<tr>
+								<td>{k.name}</td>
+								<td>
+									<a href={`/app/admin/projects/${k.projectId}`}>{k.projectName}</a>
+								</td>
+								<td style="font-family: var(--font-mono); color: var(--muted);">{k.keyPrefix}…</td>
+								<td>{new Date(k.createdAt).toLocaleDateString('uk-UA')}</td>
+								<td>
+									{k.revokedAt ? <span class="badge badge--muted">відкликано</span> : <span class="badge badge--accent">активний</span>}
+								</td>
+								<td>
+									{!k.revokedAt && (
+										<form method="POST" action={`/api/admin/api-keys/${k.id}/revoke`}>
+											<button type="submit" class="btn btn--ghost" style="padding: 6px 12px; font-size: 12px;">
+												Відкликати
+											</button>
+										</form>
+									)}
+								</td>
+							</tr>
+						))
+					)
+				}
+			</tbody>
+		</table>
+	</div>
+
+	<div class="card" style="padding: 20px; max-width: 480px;">
+		<h2 style="font-size: 16px; margin-bottom: 14px;">Новий ключ</h2>
+		{
+			allProjects.length === 0 ? (
+				<p style="color: var(--muted); font-size: 14px;">Спочатку створіть проект.</p>
+			) : (
+				<form method="POST" action="/api/admin/api-keys" style="display: flex; flex-direction: column; gap: 12px;">
+					<div class="field">
+						<label for="projectId">Проект</label>
+						<select id="projectId" name="projectId" required>
+							{allProjects.map((p) => (
+								<option value={p.id}>{p.name}</option>
+							))}
+						</select>
+					</div>
+					<div class="field">
+						<label for="name">Назва ключа</label>
+						<input type="text" id="name" name="name" placeholder="напр. «Сайт клієнта»" required />
+					</div>
+					<button type="submit" class="btn btn--primary" style="justify-content: center;">
+						Створити
+					</button>
+				</form>
+			)
+		}
+	</div>
+</AppLayout>

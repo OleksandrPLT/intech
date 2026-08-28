@@ -1,0 +1,6 @@
+---
+import { defaultAppPath } from '../../lib/session';
+
+const user = Astro.locals.user!;
+return Astro.redirect(defaultAppPath(user.role));
+---

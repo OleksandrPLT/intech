@@ -1,0 +1,697 @@
+---
+import { eq, inArray, asc, desc } from 'drizzle-orm';
+import AppLayout from '../../../../layouts/AppLayout.astro';
+import CustomFieldsForm from '../../../../components/CustomFieldsForm.astro';
+import { db } from '../../../../db/client';
+import { projects, users, tasks, tickets, projectCredentials, projectFiles, projectRevisions, projectPayments, invoices } from '../../../../db/schema';
+import {
+	projectStatusLabels,
+	paymentStatusLabels,
+	taskStatusLabels,
+	ticketStatusLabels,
+	revisionStatusLabels,
+	ledgerTypeLabels,
+	invoiceStatusLabels,
+} from '../../../../lib/labels';
+import { netByCurrency } from '../../../../lib/payments';
+import { getFieldDefs, getFieldValues } from '../../../../lib/customFields';
+import { listApiKeys } from '../../../../lib/apiKeys';
+import { formatTicketNumber } from '../../../../lib/ticketNumber';
+import { ticketCategoryLabels } from '../../../../lib/ticketCategories';
+import { formatFileSize } from '../../../../lib/format';
+
+const user = Astro.locals.user!;
+const id = Number(Astro.params.id);
+
+const project = db.select().from(projects).where(eq(projects.id, id)).get();
+
+if (!project) {
+	return Astro.redirect('/app/admin/projects');
+}
+
+const client = db.select().from(users).where(eq(users.id, project.clientId)).get();
+const saved = Astro.url.searchParams.get('saved');
+const error = Astro.url.searchParams.get('error');
+
+const projectFieldDefs = getFieldDefs('project');
+const fieldValues = getFieldValues('project', id);
+
+const projectTasks = db.select().from(tasks).where(eq(tasks.projectId, id)).orderBy(asc(tasks.sortOrder), asc(tasks.id)).all();
+const teamMembers = db.select().from(users).where(inArray(users.role, ['admin', 'staff'])).all();
+const assigneeById = new Map(teamMembers.map((m) => [m.id, m.name]));
+
+const apiKeys = listApiKeys(id);
+
+const newKey = Astro.cookies.get('new_api_key')?.value;
+if (newKey) {
+	Astro.cookies.delete('new_api_key', { path: '/app/admin/projects' });
+}
+
+const credentials = db.select().from(projectCredentials).where(eq(projectCredentials.projectId, id)).orderBy(desc(projectCredentials.createdAt)).all();
+
+const projectTickets = db.select().from(tickets).where(eq(tickets.projectId, id)).orderBy(desc(tickets.updatedAt)).all();
+
+const files = db.select().from(projectFiles).where(eq(projectFiles.projectId, id)).orderBy(desc(projectFiles.createdAt)).all();
+const uploaderById = new Map(teamMembers.map((m) => [m.id, m.name]).concat(client ? [[client.id, client.name]] : []));
+
+const revisions = db.select().from(projectRevisions).where(eq(projectRevisions.projectId, id)).orderBy(desc(projectRevisions.createdAt)).all();
+const filesById = new Map(files.map((f) => [f.id, f]));
+
+const payments = db.select().from(projectPayments).where(eq(projectPayments.projectId, id)).orderBy(desc(projectPayments.createdAt)).all();
+const totalsByCurrency = netByCurrency(payments);
+const projectInvoices = db.select().from(invoices).where(eq(invoices.projectId, id)).orderBy(desc(invoices.createdAt)).all();
+const today = new Date().toISOString().slice(0, 10);
+---
+
+<AppLayout user={user} title={project.name}>
+	<div class="app-header">
+		<h1>{project.name}</h1>
+		<div style="display: flex; gap: 10px; flex-wrap: wrap;">
+			<a href={`/app/admin/projects/${project.id}/contract`} class="btn btn--ghost" target="_blank">Договір</a>
+			<a href="/app/admin/projects" class="btn btn--ghost">← Усі проекти</a>
+		</div>
+	</div>
+
+	<p style="color: var(--muted); margin-top: -20px; margin-bottom: 16px; font-size: 14px;">
+		Клієнт: <a href={`/app/admin/clients/${client?.id}`} style="color: var(--paper);">{client?.name}</a> ({client?.email})
+	</p>
+
+	{saved && <p style="color: var(--accent); font-size: 14px; margin-bottom: 14px;">Збережено.</p>}
+	{error && <p class="form-error" style="margin-bottom: 14px; max-width: 640px;">Перевірте поля форми.</p>}
+
+	<div class="card" id="contact" style="padding: 20px; margin-bottom: 24px;">
+		<h2 style="font-size: 15px; margin: 0 0 4px;">Контакти</h2>
+		<p style="font-size: 13px; color: var(--muted); margin: 0 0 16px;">
+			Хто фактично платник за цим проектом — використовується для рахунків, квитанцій і договору
+			(якщо не заповнено, документи беруть дані з профілю клієнта).
+		</p>
+
+		<form method="POST" action={`/api/admin/projects/${project.id}/contact`}>
+			<div class="contact-type-toggle" style="display: flex; gap: 16px; margin-bottom: 16px;">
+				<label style="display: flex; align-items: center; gap: 6px; font-size: 13px; cursor: pointer;">
+					<input type="radio" name="contactType" value="individual" checked={project.contactType === 'individual'} class="contact-type-radio" data-target="individual" />
+					Фізична особа
+				</label>
+				<label style="display: flex; align-items: center; gap: 6px; font-size: 13px; cursor: pointer;">
+					<input type="radio" name="contactType" value="legal" checked={project.contactType === 'legal'} class="contact-type-radio" data-target="legal" />
+					Юридична особа
+				</label>
+			</div>
+
+			<div class="contact-fields form-grid" data-fields="individual" style={project.contactType === 'legal' ? 'display: none;' : ''}>
+				<div class="field">
+					<label for="contactFullName">ПІБ</label>
+					<input type="text" id="contactFullName" name="contactFullName" value={project.contactFullName ?? ''} />
+				</div>
+				<div class="field">
+					<label for="contactPhone">Телефон</label>
+					<input type="tel" id="contactPhone" name="contactPhone" value={project.contactPhone ?? ''} data-phone-mask placeholder="+380 XX XXX XX XX" />
+				</div>
+				<div class="field">
+					<label for="contactEmail">Електронна пошта</label>
+					<input type="email" id="contactEmail" name="contactEmail" value={project.contactEmail ?? ''} />
+				</div>
+				<div class="field">
+					<label for="contactCity">Місто</label>
+					<input type="text" id="contactCity" name="contactCity" value={project.contactCity ?? ''} />
+				</div>
+				<div class="field" style="grid-column: 1 / -1;">
+					<label for="contactAddress">Адреса</label>
+					<input type="text" id="contactAddress" name="contactAddress" value={project.contactAddress ?? ''} />
+				</div>
+			</div>
+
+			<div class="contact-fields form-grid" data-fields="legal" style={project.contactType === 'individual' ? 'display: none;' : ''}>
+				<div class="field">
+					<label for="contactCompanyName">Найменування</label>
+					<input type="text" id="contactCompanyName" name="contactCompanyName" value={project.contactCompanyName ?? ''} />
+				</div>
+				<div class="field">
+					<label for="contactTaxId">Код ЄДРПОУ</label>
+					<input type="text" id="contactTaxId" name="contactTaxId" value={project.contactTaxId ?? ''} />
+				</div>
+				<div class="field" style="grid-column: 1 / -1;">
+					<label for="contactLegalAddress">Юридична адреса</label>
+					<input type="text" id="contactLegalAddress" name="contactLegalAddress" value={project.contactLegalAddress ?? ''} />
+				</div>
+				<div class="field">
+					<label for="contactDirectorName">Директор</label>
+					<input type="text" id="contactDirectorName" name="contactDirectorName" value={project.contactDirectorName ?? ''} placeholder="ПІБ директора" />
+				</div>
+				<div class="field">
+					<label for="contactDirectorPhone">Телефон директора</label>
+					<input type="tel" id="contactDirectorPhone" name="contactDirectorPhone" value={project.contactDirectorPhone ?? ''} data-phone-mask placeholder="+380 XX XXX XX XX" />
+				</div>
+				<div class="field">
+					<label for="contactDirectorEmail">Email директора</label>
+					<input type="email" id="contactDirectorEmail" name="contactDirectorEmail" value={project.contactDirectorEmail ?? ''} />
+				</div>
+			</div>
+
+			<button type="submit" class="btn btn--primary" style="margin-top: 16px; padding: 9px 20px; font-size: 13px;">Зберегти контакти</button>
+		</form>
+	</div>
+
+	<div style="display: grid; grid-template-columns: 1fr 1fr; gap: 16px; align-items: start; margin-bottom: 24px;">
+		<form
+			method="POST"
+			action={`/api/admin/projects/${project.id}`}
+			class="card"
+			style="padding: 20px; display: flex; flex-direction: column; gap: 12px;"
+		>
+			<div class="field">
+				<label for="name">Назва проекту</label>
+				<input type="text" id="name" name="name" value={project.name} required />
+			</div>
+			<div class="field">
+				<label for="websiteUrl">Сайт</label>
+				<input type="text" id="websiteUrl" name="websiteUrl" value={project.websiteUrl ?? ''} placeholder="https://…" />
+			</div>
+			<div class="field">
+				<label for="description">Опис</label>
+				<textarea id="description" name="description">{project.description}</textarea>
+			</div>
+			<div class="field">
+				<label for="status">Статус проекту</label>
+				<select id="status" name="status">
+					{
+						Object.entries(projectStatusLabels).map(([value, label]) => (
+							<option value={value} selected={value === project.status}>
+								{label}
+							</option>
+						))
+					}
+				</select>
+			</div>
+			<div class="field">
+				<label for="paymentStatus">Статус оплати (видно клієнту)</label>
+				<select id="paymentStatus" name="paymentStatus">
+					{
+						Object.entries(paymentStatusLabels).map(([value, label]) => (
+							<option value={value} selected={value === project.paymentStatus}>
+								{label}
+							</option>
+						))
+					}
+				</select>
+			</div>
+			<CustomFieldsForm defs={projectFieldDefs} values={fieldValues} />
+			<button type="submit" class="btn btn--primary" style="align-self: flex-start;">Зберегти</button>
+		</form>
+
+		<div class="card" style="padding: 20px;">
+			<h2 style="font-size: 15px; margin: 0 0 4px;">API-ключі</h2>
+			<p style="font-size: 13px; color: var(--muted); margin: 0 0 18px;">
+				Дайте цей ключ клієнтському сайту, щоб він міг створювати/читати тікети цього проекту напряму. Ключ показується один раз.
+			</p>
+
+			{
+				newKey && (
+					<div class="form-error" style="border-color: var(--accent); background: color-mix(in srgb, var(--accent) 14%, var(--ink-soft)); color: var(--paper); margin-bottom: 16px; word-break: break-all; font-family: var(--font-mono); font-size: 13px;">
+						Новий ключ (збережіть зараз, ще раз він не покажеться): <br />
+						<strong>{newKey}</strong>
+					</div>
+				)
+			}
+
+			{
+				apiKeys.length > 0 && (
+					<div style="display: flex; flex-direction: column; gap: 10px; margin-bottom: 18px;">
+						{apiKeys.map((k) => (
+							<div style="display: flex; justify-content: space-between; align-items: center; gap: 10px; font-size: 13px;">
+								<span>
+									{k.name} <span style="font-family: var(--font-mono); color: var(--muted);">({k.keyPrefix}…)</span>
+									{k.revokedAt && <span class="badge badge--muted" style="margin-left: 8px;">відкликано</span>}
+								</span>
+								{!k.revokedAt && (
+									<form method="POST" action={`/api/admin/api-keys/${k.id}/revoke`}>
+										<button type="submit" class="btn btn--ghost" style="padding: 5px 12px; font-size: 12px;">
+											Відкликати
+										</button>
+									</form>
+								)}
+							</div>
+						))}
+					</div>
+				)
+			}
+
+			<form method="POST" action={`/api/admin/projects/${project.id}/api-keys`} style="display: flex; gap: 8px;">
+				<input type="text" name="name" placeholder="Назва ключа (напр. «Сайт клієнта»)" required style="flex: 1; font: inherit; background: var(--ink-soft); color: var(--paper); border: 1px solid var(--border); border-radius: 8px; padding: 10px 12px; font-size: 13px;" />
+				<button type="submit" class="btn btn--ghost">Створити</button>
+			</form>
+		</div>
+	</div>
+
+	<h2 style="font-size: 15px; margin-bottom: 16px;">Задачі</h2>
+	<div style="display: flex; flex-direction: column; gap: 10px; margin-bottom: 14px;">
+		{
+			projectTasks.length === 0 ? (
+				<p style="color: var(--muted); font-size: 14px;">Задач ще немає.</p>
+			) : (
+				projectTasks.map((t) => (
+					<a href={`/app/admin/tasks/${t.id}`} class="card" style="padding: 16px 20px; display: flex; justify-content: space-between; align-items: center; gap: 12px; color: var(--paper);">
+						<span>{t.title}</span>
+						<span style="display: flex; gap: 8px; align-items: center;">
+							{t.assignedTo && <span class="badge badge--blue">{assigneeById.get(t.assignedTo) ?? '—'}</span>}
+							<span class="badge">{taskStatusLabels[t.status] ?? t.status}</span>
+						</span>
+					</a>
+				))
+			)
+		}
+	</div>
+
+	<form method="POST" action="/api/admin/tasks" class="card" style="padding: 16px; display: flex; gap: 10px; flex-wrap: wrap; align-items: flex-end;">
+		<input type="hidden" name="projectId" value={project.id} />
+		<div class="field" style="flex: 1; min-width: 200px;">
+			<label>Нова задача</label>
+			<input type="text" name="title" required placeholder="напр. Налаштувати SSL" />
+		</div>
+		<div class="field">
+			<label>Призначити</label>
+			<select name="assignedTo">
+				<option value="">— не призначено</option>
+				{teamMembers.map((m) => (
+					<option value={m.id}>{m.name}</option>
+				))}
+			</select>
+		</div>
+		<div class="field">
+			<label>Термін</label>
+			<input type="date" name="dueDate" />
+		</div>
+		<button type="submit" class="btn btn--primary">Додати</button>
+	</form>
+
+	<h2 id="tickets" style="font-size: 15px; margin: 40px 0 16px;">Тікети проекту</h2>
+	<div class="card table-wrap" style="margin-bottom: 24px;">
+		<table class="data-table">
+			<thead>
+				<tr>
+					<th>№</th>
+					<th>Тема</th>
+					<th>Категорія</th>
+					<th>Статус</th>
+				</tr>
+			</thead>
+			<tbody>
+				{
+					projectTickets.length === 0 ? (
+						<tr>
+							<td colspan="4" style="color: var(--muted);">Тікетів по цьому проекту ще немає.</td>
+						</tr>
+					) : (
+						projectTickets.map((t) => (
+							<tr>
+								<td>
+									<a href={`/app/admin/tickets/${t.id}`} style="font-family: var(--font-mono);">
+										{formatTicketNumber(t.category, t.number)}
+									</a>
+								</td>
+								<td>
+									<a href={`/app/admin/tickets/${t.id}`} style="color: var(--paper);">{t.subject}</a>
+								</td>
+								<td>{ticketCategoryLabels[t.category] ?? t.category}</td>
+								<td>
+									<span class="badge">{ticketStatusLabels[t.status] ?? t.status}</span>
+								</td>
+							</tr>
+						))
+					)
+				}
+			</tbody>
+		</table>
+	</div>
+
+	<div style="display: grid; grid-template-columns: 1fr 1fr; gap: 16px; align-items: start; margin-bottom: 24px;">
+		<div id="credentials" class="card" style="padding: 20px;">
+			<h2 style="font-size: 15px; margin: 0 0 4px;">Доступи</h2>
+			<p style="font-size: 13px; color: var(--muted); margin: 0 0 18px;">
+				Логіни/паролі хостингу, реєстратора, CMS тощо. Зберігаються зашифровано, видно лише адміну.
+			</p>
+
+			{
+				credentials.length > 0 && (
+					<div style="display: flex; flex-direction: column; gap: 12px; margin-bottom: 18px;">
+						{credentials.map((c) => (
+							<div class="card" style="padding: 12px 14px; background: var(--ink-soft);" data-credential={c.id}>
+								<div style="display: flex; justify-content: space-between; align-items: center; gap: 10px; font-size: 13px;">
+									<strong>{c.label}</strong>
+									<form method="POST" action={`/api/admin/credentials/${c.id}/delete`} onsubmit="return confirm('Видалити доступ?')">
+										<button type="submit" class="btn btn--ghost" style="padding: 3px 10px; font-size: 11px;">✕</button>
+									</form>
+								</div>
+								{c.username && <div style="font-size: 12px; color: var(--muted); margin-top: 4px;">Логін: {c.username}</div>}
+								<div style="font-size: 12px; color: var(--muted); margin-top: 4px; display: flex; align-items: center; gap: 8px;">
+									Пароль:{' '}
+									<span class="credential-password" style="font-family: var(--font-mono);">••••••••</span>
+									<button type="button" class="btn btn--ghost credential-reveal" data-id={c.id} style="padding: 2px 8px; font-size: 11px;">
+										Показати
+									</button>
+								</div>
+								{c.notes && <div style="font-size: 12px; color: var(--muted); margin-top: 4px;">{c.notes}</div>}
+							</div>
+						))}
+					</div>
+				)
+			}
+
+			<form method="POST" action={`/api/admin/projects/${project.id}/credentials`} style="display: flex; flex-direction: column; gap: 10px;">
+				<input type="text" name="label" placeholder="Назва (напр. «Хостинг»)" required style="font: inherit; background: var(--ink-soft); color: var(--paper); border: 1px solid var(--border); border-radius: 8px; padding: 10px 12px; font-size: 13px;" />
+				<input type="text" name="username" placeholder="Логін" style="font: inherit; background: var(--ink-soft); color: var(--paper); border: 1px solid var(--border); border-radius: 8px; padding: 10px 12px; font-size: 13px;" />
+				<input type="text" name="password" placeholder="Пароль" required style="font: inherit; background: var(--ink-soft); color: var(--paper); border: 1px solid var(--border); border-radius: 8px; padding: 10px 12px; font-size: 13px;" />
+				<input type="text" name="notes" placeholder="Нотатка (необов'язково)" style="font: inherit; background: var(--ink-soft); color: var(--paper); border: 1px solid var(--border); border-radius: 8px; padding: 10px 12px; font-size: 13px;" />
+				<button type="submit" class="btn btn--ghost">Додати доступ</button>
+			</form>
+		</div>
+
+		<div id="files" class="card" style="padding: 20px;">
+			<h2 style="font-size: 15px; margin: 0 0 18px;">Файли проекту</h2>
+
+			{
+				files.length > 0 ? (
+					<div style="display: flex; flex-direction: column; gap: 10px; margin-bottom: 18px;">
+						{files.map((f) => (
+							<a href={`/api/project-files/${f.id}`} style="display: flex; justify-content: space-between; gap: 10px; font-size: 13px; color: var(--paper);">
+								<span>{f.filename}</span>
+								<span style="color: var(--muted); white-space: nowrap;">
+									{formatFileSize(f.size)} · {uploaderById.get(f.uploadedBy) ?? '—'}
+								</span>
+							</a>
+						))}
+					</div>
+				) : (
+					<p style="color: var(--muted); font-size: 14px; margin: 0 0 18px;">Файлів ще немає.</p>
+				)
+			}
+
+			<form method="POST" action="/api/project-files" enctype="multipart/form-data" style="display: flex; gap: 8px;">
+				<input type="hidden" name="projectId" value={project.id} />
+				<input type="file" name="file" required style="flex: 1; font-size: 13px;" />
+				<button type="submit" class="btn btn--ghost">Завантажити</button>
+			</form>
+		</div>
+	</div>
+
+	<h2 id="revisions" style="font-size: 15px; margin-bottom: 16px;">Ревізії — стрічка на затвердження</h2>
+	<div style="display: flex; flex-direction: column; gap: 12px; margin-bottom: 14px;">
+		{
+			revisions.length === 0 ? (
+				<p style="color: var(--muted); font-size: 14px;">Ревізій ще немає.</p>
+			) : (
+				revisions.map((r) => (
+					<div class="card" style="padding: 18px 20px;">
+						<div style="display: flex; justify-content: space-between; align-items: flex-start; gap: 12px; flex-wrap: wrap;">
+							<div>
+								<strong style="font-size: 14px;">{r.title}</strong>
+								{r.description && <p style="font-size: 13px; margin: 6px 0 0; max-width: 520px;">{r.description}</p>}
+								{r.fileId && filesById.get(r.fileId) && (
+									<a href={`/api/project-files/${r.fileId}`} style="font-size: 12px; color: var(--accent); display: inline-block; margin-top: 6px;">
+										📎 {filesById.get(r.fileId)?.filename}
+									</a>
+								)}
+								{r.clientComment && (
+									<p style="font-size: 12px; color: var(--muted); margin: 6px 0 0;">Коментар клієнта: {r.clientComment}</p>
+								)}
+							</div>
+							<span class={`badge ${r.status === 'approved' ? 'badge--accent' : r.status === 'changes_requested' ? 'badge--blue' : ''}`}>
+								{revisionStatusLabels[r.status] ?? r.status}
+							</span>
+						</div>
+					</div>
+				))
+			)
+		}
+	</div>
+
+	<form method="POST" action={`/api/admin/projects/${project.id}/revisions`} enctype="multipart/form-data" class="card" style="padding: 16px; display: flex; gap: 10px; flex-wrap: wrap; align-items: flex-end;">
+		<div class="field" style="flex: 1; min-width: 200px;">
+			<label>Назва версії</label>
+			<input type="text" name="title" required placeholder="напр. Версія 2 — головна сторінка" />
+		</div>
+		<div class="field" style="flex: 2; min-width: 240px;">
+			<label>Опис</label>
+			<input type="text" name="description" placeholder="Що змінилось" />
+		</div>
+		<div class="field">
+			<label>Файл (необов'язково)</label>
+			<input type="file" name="file" />
+		</div>
+		<button type="submit" class="btn btn--primary">Надіслати на затвердження</button>
+	</form>
+
+	<h2 id="invoices" style="font-size: 17px; margin: 40px 0 16px;">Рахунки на оплату</h2>
+	<div class="card table-wrap" style="margin-bottom: 16px;">
+		<table class="data-table">
+			<thead>
+				<tr>
+					<th>№</th>
+					<th>Дата</th>
+					<th>Сума</th>
+					<th>Опис</th>
+					<th>Оплатити до</th>
+					<th>Статус</th>
+					<th>Рахунок</th>
+					<th></th>
+				</tr>
+			</thead>
+			<tbody>
+				{
+					projectInvoices.length === 0 ? (
+						<tr>
+							<td colspan="8" style="color: var(--muted);">Рахунків ще немає.</td>
+						</tr>
+					) : (
+						projectInvoices.map((inv) => (
+							<tr>
+								<td style="font-family: var(--font-mono); font-size: 12px;">INV-{String(project.id).padStart(4, '0')}-{String(inv.id).padStart(5, '0')}</td>
+								<td>{inv.issuedAt ?? new Date(inv.createdAt).toLocaleDateString('uk-UA')}</td>
+								<td style="font-family: var(--font-mono);">{inv.amount} {inv.currency}</td>
+								<td>{inv.description}</td>
+								<td>{inv.dueDate ?? '—'}</td>
+								<td>
+									<form method="POST" action={`/api/admin/invoices/${inv.id}/status`} style="display: inline-flex; gap: 6px; align-items: center;">
+										<select name="status" onchange="this.form.requestSubmit()" style="font: inherit; font-size: 12px; background: var(--ink-soft); color: var(--paper); border: 1px solid var(--border); border-radius: 6px; padding: 4px 8px;">
+											{Object.entries(invoiceStatusLabels).map(([value, label]) => (
+												<option value={value} selected={value === inv.status}>{label}</option>
+											))}
+										</select>
+									</form>
+								</td>
+								<td>
+									<a href={`/app/admin/projects/${project.id}/invoice?bill=${inv.id}`} target="_blank">Переглянути</a>
+								</td>
+								<td>
+									<form method="POST" action={`/api/admin/invoices/${inv.id}/delete`} onsubmit="return confirm('Видалити рахунок?')">
+										<button type="submit" class="btn btn--ghost" style="padding: 5px 10px; font-size: 12px;">✕</button>
+									</form>
+								</td>
+							</tr>
+						))
+					)
+				}
+			</tbody>
+		</table>
+	</div>
+
+	<form method="POST" action={`/api/admin/projects/${project.id}/invoices`} class="card" style="padding: 16px; display: flex; gap: 10px; flex-wrap: wrap; align-items: flex-end; margin-bottom: 16px;">
+		<div class="field" style="width: 120px;">
+			<label>Сума</label>
+			<input type="text" name="amount" required placeholder="1000" />
+		</div>
+		<div class="field" style="width: 100px;">
+			<label>Валюта</label>
+			<select name="currency">
+				<option value="UAH">UAH</option>
+				<option value="USD">USD</option>
+				<option value="EUR">EUR</option>
+			</select>
+		</div>
+		<div class="field" style="width: 150px;">
+			<label>Дата рахунку</label>
+			<input type="date" name="issuedAt" value={today} />
+		</div>
+		<div class="field" style="width: 150px;">
+			<label>Оплатити до</label>
+			<input type="date" name="dueDate" />
+		</div>
+		<div class="field" style="flex: 1; min-width: 160px;">
+			<label>Опис</label>
+			<input type="text" name="description" placeholder="напр. Другий етап розробки" />
+		</div>
+		<button type="submit" class="btn btn--primary">Виставити рахунок</button>
+	</form>
+
+	<div style="display: flex; justify-content: space-between; align-items: center; margin: 40px 0 16px;">
+		<h2 id="finance" style="font-size: 17px; margin: 0;">Фінанси</h2>
+		<a href="/app/admin/finance" class="btn btn--ghost" style="padding: 6px 14px; font-size: 12px;">Усі фінанси →</a>
+	</div>
+
+	{
+		Object.keys(totalsByCurrency).length > 0 && (
+			<div style="display: flex; gap: 8px; flex-wrap: wrap; margin-bottom: 16px;">
+				{Object.entries(totalsByCurrency).map(([cur, sum]) => (
+					<span class="badge badge--accent">Баланс: {sum.toFixed(2)} {cur}</span>
+				))}
+			</div>
+		)
+	}
+
+	<div class="card table-wrap" style="margin-bottom: 16px;">
+		<table class="data-table">
+			<thead>
+				<tr>
+					<th>Дата</th>
+					<th>Тип</th>
+					<th>Сума</th>
+					<th>Нотатка</th>
+					<th>Файл</th>
+					<th>Квитанція</th>
+					<th></th>
+				</tr>
+			</thead>
+			<tbody>
+				{
+					payments.length === 0 ? (
+						<tr>
+							<td colspan="7" style="color: var(--muted);">Записів ще немає.</td>
+						</tr>
+					) : (
+						payments.map((p) => (
+							<tr>
+								<td>{p.paidAt ?? new Date(p.createdAt).toLocaleDateString('uk-UA')}</td>
+								<td>
+									<span class={`badge ${p.type === 'income' ? 'badge--accent' : 'badge--blue'}`}>{ledgerTypeLabels[p.type] ?? p.type}</span>
+								</td>
+								<td style="font-family: var(--font-mono);">
+									{p.type === 'expense' ? '−' : '+'}{p.amount} {p.currency}
+								</td>
+								<td>{p.note}</td>
+								<td>
+									{p.receiptFileId ? (
+										<a href={`/api/project-files/${p.receiptFileId}`}>Файл</a>
+									) : (
+										<span style="color: var(--muted);">—</span>
+									)}
+								</td>
+								<td>
+									{p.type === 'income' ? (
+										<a href={`/app/admin/projects/${project.id}/receipt?payment=${p.id}`} target="_blank">Переглянути</a>
+									) : (
+										<span style="color: var(--muted);">—</span>
+									)}
+								</td>
+								<td>
+									<form method="POST" action={`/api/admin/payments/${p.id}/delete`} onsubmit="return confirm('Видалити запис?')">
+										<button type="submit" class="btn btn--ghost" style="padding: 5px 10px; font-size: 12px;">✕</button>
+									</form>
+								</td>
+							</tr>
+						))
+					)
+				}
+			</tbody>
+		</table>
+	</div>
+
+	<form method="POST" action={`/api/admin/projects/${project.id}/payments`} enctype="multipart/form-data" class="card" style="padding: 16px; display: flex; gap: 10px; flex-wrap: wrap; align-items: flex-end;">
+		<div class="field" style="width: 110px;">
+			<label>Тип</label>
+			<select name="type">
+				<option value="income">Дохід</option>
+				<option value="expense">Витрата</option>
+			</select>
+		</div>
+		<div class="field" style="width: 120px;">
+			<label>Сума</label>
+			<input type="text" name="amount" required placeholder="1000" />
+		</div>
+		<div class="field" style="width: 100px;">
+			<label>Валюта</label>
+			<select name="currency">
+				<option value="UAH">UAH</option>
+				<option value="USD">USD</option>
+				<option value="EUR">EUR</option>
+			</select>
+		</div>
+		<div class="field" style="width: 150px;">
+			<label>Дата</label>
+			<input type="date" name="paidAt" value={today} />
+		</div>
+		<div class="field" style="flex: 1; min-width: 160px;">
+			<label>Нотатка</label>
+			<input type="text" name="note" placeholder="напр. Перший етап" />
+		</div>
+		<div class="field">
+			<label>Квитанція (необов'язково)</label>
+			<input type="file" name="receipt" />
+		</div>
+		{
+			projectTasks.length > 0 && (
+				<div class="field" style="width: 100%;">
+					<label>За які задачі (позначте — потрапить у квитанцію)</label>
+					<div style="display: flex; flex-wrap: wrap; gap: 6px 16px;">
+						{projectTasks.map((t) => (
+							<label style="display: flex; align-items: center; gap: 6px; font-size: 13px; color: var(--paper); text-transform: none;">
+								<input type="checkbox" name="taskIds" value={t.id} style="width: 15px; height: 15px;" />
+								{t.title}
+							</label>
+						))}
+					</div>
+				</div>
+			)
+		}
+		<button type="submit" class="btn btn--primary">Додати запис</button>
+	</form>
+
+	<script>
+		document.querySelectorAll<HTMLInputElement>('.contact-type-radio').forEach((radio) => {
+			radio.addEventListener('change', () => {
+				document.querySelectorAll<HTMLElement>('.contact-fields').forEach((el) => {
+					el.style.display = el.dataset.fields === radio.dataset.target ? '' : 'none';
+				});
+			});
+		});
+
+		// Same Ukrainian phone mask as ClientProfileFields.astro.
+		document.querySelectorAll<HTMLInputElement>('input[data-phone-mask]').forEach((input) => {
+			input.addEventListener('input', () => {
+				let digits = input.value.replace(/\D/g, '');
+				if (!digits) {
+					input.value = '';
+					return;
+				}
+				if (digits.startsWith('0')) digits = '380' + digits.slice(1);
+				else if (!digits.startsWith('380')) digits = '380' + digits;
+				digits = digits.slice(0, 12);
+
+				const rest = digits.slice(3);
+				let formatted = '+380';
+				if (rest.length) formatted += ' ' + rest.slice(0, 2);
+				if (rest.length > 2) formatted += ' ' + rest.slice(2, 5);
+				if (rest.length > 5) formatted += ' ' + rest.slice(5, 7);
+				if (rest.length > 7) formatted += ' ' + rest.slice(7, 9);
+				input.value = formatted;
+			});
+		});
+
+		document.querySelectorAll<HTMLButtonElement>('.credential-reveal').forEach((btn) => {
+			btn.addEventListener('click', async () => {
+				const id = btn.dataset.id;
+				const target = btn.parentElement?.querySelector('.credential-password');
+				if (!target) return;
+				if (btn.textContent === 'Приховати') {
+					target.textContent = '••••••••';
+					btn.textContent = 'Показати';
+					return;
+				}
+				const res = await fetch(`/api/admin/credentials/${id}/reveal`);
+				if (!res.ok) return;
+				const data = await res.json();
+				target.textContent = data.password;
+				btn.textContent = 'Приховати';
+			});
+		});
+	</script>
+</AppLayout>

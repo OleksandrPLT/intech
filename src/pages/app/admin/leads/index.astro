@@ -1,0 +1,109 @@
+---
+import { desc } from 'drizzle-orm';
+import AppLayout from '../../../../layouts/AppLayout.astro';
+import CustomFieldsForm from '../../../../components/CustomFieldsForm.astro';
+import { db } from '../../../../db/client';
+import { leads } from '../../../../db/schema';
+import { leadStageLabels } from '../../../../lib/labels';
+import { getFieldDefs } from '../../../../lib/customFields';
+
+const user = Astro.locals.user!;
+const allLeads = db.select().from(leads).orderBy(desc(leads.createdAt)).all();
+const error = Astro.url.searchParams.get('error');
+const leadFieldDefs = getFieldDefs('lead');
+
+const q = (Astro.url.searchParams.get('q') || '').trim().toLowerCase();
+const stageFilter = Astro.url.searchParams.get('stage') || '';
+
+const stageOrder = ['new', 'contacted', 'proposal', 'won', 'lost'] as const;
+const stageBadge: Record<string, string> = {
+	new: 'badge',
+	contacted: 'badge badge--blue',
+	proposal: 'badge badge--blue',
+	won: 'badge badge--accent',
+	lost: 'badge badge--muted',
+};
+
+const filteredLeads = allLeads
+	.filter((l) => !stageFilter || l.stage === stageFilter)
+	.filter((l) => !q || l.name.toLowerCase().includes(q) || (l.contact ?? '').toLowerCase().includes(q))
+	.slice()
+	.sort((a, b) => stageOrder.indexOf(a.stage as any) - stageOrder.indexOf(b.stage as any));
+---
+
+<AppLayout user={user} title="CRM / ліди">
+	<div class="app-header">
+		<h1>CRM · ліди</h1>
+	</div>
+
+	<form method="GET" style="display: flex; gap: 12px; margin-bottom: 14px; flex-wrap: wrap;">
+		<input type="text" name="q" placeholder="Пошук за ім'ям або контактом…" value={q} style="flex: 1; min-width: 220px; font: inherit; background: var(--ink-soft); color: var(--paper); border: 1px solid var(--border); border-radius: 8px; padding: 10px 14px;" />
+		<select name="stage" style="font: inherit; background: var(--ink-soft); color: var(--paper); border: 1px solid var(--border); border-radius: 8px; padding: 10px 14px;">
+			<option value="">Усі стадії</option>
+			{Object.entries(leadStageLabels).map(([value, label]) => (
+				<option value={value} selected={value === stageFilter}>{label}</option>
+			))}
+		</select>
+		<button type="submit" class="btn btn--ghost">Фільтрувати</button>
+	</form>
+
+	<div class="card table-wrap" style="margin-bottom: 20px;">
+		<table class="data-table">
+			<thead>
+				<tr>
+					<th>Ім'я / компанія</th>
+					<th>Контакт</th>
+					<th>Джерело</th>
+					<th>Стадія</th>
+				</tr>
+			</thead>
+			<tbody>
+				{
+					filteredLeads.length === 0 ? (
+						<tr>
+							<td colspan="4" style="color: var(--muted);">
+								Нічого не знайдено.
+							</td>
+						</tr>
+					) : (
+						filteredLeads.map((l) => (
+							<tr>
+								<td>
+									<a href={`/app/admin/leads/${l.id}`}>{l.name}</a>
+								</td>
+								<td>{l.contact}</td>
+								<td>{l.source}</td>
+								<td>
+									<span class={stageBadge[l.stage]}>{leadStageLabels[l.stage] ?? l.stage}</span>
+								</td>
+							</tr>
+						))
+					)
+				}
+			</tbody>
+		</table>
+	</div>
+
+	<div class="card" style="padding: 20px; max-width: 480px;">
+		<h2 style="font-size: 16px; margin-bottom: 14px;">Новий лід</h2>
+
+		{error && <p class="form-error" style="margin-bottom: 16px;">Вкажіть хоча б ім'я.</p>}
+
+		<form method="POST" action="/api/admin/leads" style="display: flex; flex-direction: column; gap: 12px;">
+			<div class="field">
+				<label for="name">Ім'я / компанія</label>
+				<input type="text" id="name" name="name" required />
+			</div>
+			<div class="field">
+				<label for="contact">Контакт (email, телефон, telegram)</label>
+				<input type="text" id="contact" name="contact" />
+			</div>
+			<div class="field">
+				<label for="source">Джерело</label>
+				<input type="text" id="source" name="source" placeholder="сайт, рекомендація, соцмережі…" />
+			</div>
+			<CustomFieldsForm defs={leadFieldDefs} />
+			<button type="submit" class="btn btn--primary" style="justify-content: center;">Додати ліда</button>
+		</form>
+	</div>
+</AppLayout>

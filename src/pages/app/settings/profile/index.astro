@@ -1,0 +1,56 @@
+---
+import AppLayout from '../../../../layouts/AppLayout.astro';
+
+const user = Astro.locals.user!;
+const saved = Astro.url.searchParams.get('saved');
+const error = Astro.url.searchParams.get('error');
+const errorMessages: Record<string, string> = {
+	invalid: "Заповніть ім'я, email і поточний пароль.",
+	password: 'Невірний поточний пароль.',
+	newpassword: 'Новий пароль — мінімум 8 символів, і поля мають збігатися.',
+	exists: 'Цей email вже використовується іншим акаунтом.',
+};
+
+const roleLabel = user.role === 'admin' ? 'Адмін' : user.role === 'staff' ? 'Команда' : 'Клієнт';
+---
+
+<AppLayout user={user} title="Мій профіль">
+	<div class="app-header">
+		<h1>Мій профіль</h1>
+	</div>
+
+	{saved && <p style="color: var(--accent); font-size: 14px; margin-bottom: 18px;">Збережено.</p>}
+	{error && <p class="form-error" style="margin-bottom: 18px; max-width: 440px;">{errorMessages[error] ?? 'Сталася помилка.'}</p>}
+
+	<form method="POST" action="/api/settings/profile" class="card" style="padding: 16px; max-width: 440px; display: flex; flex-direction: column; gap: 14px;">
+		<div class="field">
+			<label>Роль</label>
+			<span class="badge" style="align-self: flex-start;">{roleLabel}</span>
+		</div>
+		<div class="field">
+			<label for="name">Ім'я</label>
+			<input type="text" id="name" name="name" value={user.name} required />
+		</div>
+		<div class="field">
+			<label for="email">Email</label>
+			<input type="email" id="email" name="email" value={user.email} required />
+		</div>
+
+		<hr style="border: none; border-top: 1px solid var(--border); margin: 4px 0;" />
+
+		<div class="field">
+			<label for="newPassword">Новий пароль (залиште порожнім, щоб не змінювати)</label>
+			<input type="password" id="newPassword" name="newPassword" minlength="8" />
+		</div>
+		<div class="field">
+			<label for="newPasswordConfirm">Підтвердження нового пароля</label>
+			<input type="password" id="newPasswordConfirm" name="newPasswordConfirm" minlength="8" />
+		</div>
+		<div class="field">
+			<label for="currentPassword">Поточний пароль (щоб підтвердити зміни)</label>
+			<input type="password" id="currentPassword" name="currentPassword" required />
+		</div>
+
+		<button type="submit" class="btn btn--primary" style="align-self: flex-start;">Зберегти</button>
+	</form>
+</AppLayout>

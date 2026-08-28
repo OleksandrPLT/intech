@@ -1,0 +1,61 @@
+---
+import { eq, asc } from 'drizzle-orm';
+import AppLayout from '../../../layouts/AppLayout.astro';
+import { db } from '../../../db/client';
+import { tasks, projects } from '../../../db/schema';
+import { taskStatusLabels } from '../../../lib/labels';
+
+const user = Astro.locals.user!;
+
+const myTasks = db
+	.select({
+		id: tasks.id,
+		title: tasks.title,
+		description: tasks.description,
+		status: tasks.status,
+		dueDate: tasks.dueDate,
+		projectName: projects.name,
+	})
+	.from(tasks)
+	.leftJoin(projects, eq(tasks.projectId, projects.id))
+	.where(eq(tasks.assignedTo, user.id))
+	.orderBy(asc(tasks.status))
+	.all();
+
+const statusOrder = ['todo', 'in_progress', 'done'];
+const sorted = myTasks.slice().sort((a, b) => statusOrder.indexOf(a.status) - statusOrder.indexOf(b.status));
+---
+
+<AppLayout user={user} title="Мої задачі">
+	<div class="app-header">
+		<h1>Мої задачі</h1>
+	</div>
+
+	{
+		sorted.length === 0 ? (
+			<p class="card" style="padding: 20px; color: var(--muted);">Поки немає призначених задач.</p>
+		) : (
+			<div style="display: flex; flex-direction: column; gap: 14px;">
+				{sorted.map((t) => (
+					<div class="card" style="padding: 20px 24px; display: flex; justify-content: space-between; align-items: center; gap: 12px; flex-wrap: wrap;">
+						<div>
+							<div style="font-size: 15px; color: var(--paper); margin-bottom: 4px;">{t.title}</div>
+							<div style="font-size: 13px; color: var(--muted);">
+								{t.projectName} {t.dueDate && `· до ${t.dueDate}`}
+							</div>
+							{t.description && <p style="font-size: 13px; margin: 8px 0 0;">{t.description}</p>}
+						</div>
+						<form method="POST" action={`/api/staff/tasks/${t.id}`} style="display: flex; gap: 8px; align-items: center;">
+							<select name="status" style="font: inherit; background: var(--ink-soft); color: var(--paper); border: 1px solid var(--border); border-radius: 8px; padding: 8px 12px; font-size: 13px;">
+								{Object.entries(taskStatusLabels).map(([value, label]) => (
+									<option value={value} selected={value === t.status}>{label}</option>
+								))}
+							</select>
+							<button type="submit" class="btn btn--ghost" style="padding: 8px 14px; font-size: 13px;">Оновити</button>
+						</form>
+					</div>
+				))}
+			</div>
+		)
+	}
+</AppLayout>

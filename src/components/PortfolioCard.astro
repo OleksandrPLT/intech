@@ -1,0 +1,175 @@
+---
+import type { PortfolioItem } from '../data/portfolio';
+import type { Lang } from '../i18n/ui';
+import { useTranslations } from '../i18n/utils';
+
+interface Props {
+	item: PortfolioItem;
+	lang: Lang;
+}
+
+const { item, lang } = Astro.props;
+const t = useTranslations(lang);
+
+// Free, no-auth screenshot service — renders a preview straight from the URL,
+// no image upload needed. https://microlink.io/docs/api/parameters/embed
+const previewSrc = `https://api.microlink.io/?url=${encodeURIComponent(item.url)}&screenshot=true&meta=false&embed=screenshot.url`;
+const displayUrl = item.url.replace(/^https?:\/\//, '').replace(/\/$/, '');
+---
+
+<a href={item.url} target="_blank" rel="noopener noreferrer" class="portfolio-card card">
+	<span class="portfolio-card__preview">
+		<img
+			src={previewSrc}
+			alt=""
+			loading="lazy"
+			width="800"
+			height="500"
+			onerror="this.style.opacity='0'"
+		/>
+	</span>
+	<span class="portfolio-card__body">
+		<span class="portfolio-card__top">
+			<span class="portfolio-card__identity">
+				<span class="portfolio-card__logo">
+					{
+						item.logo ? (
+							<img src={item.logo} alt="" loading="lazy" />
+						) : (
+							<span aria-hidden="true">{item.title[lang].charAt(0)}</span>
+						)
+					}
+				</span>
+				<span class="portfolio-card__title">{item.title[lang]}</span>
+			</span>
+			{item.tags && <span class="portfolio-card__tags">{item.tags.join(' · ')}</span>}
+		</span>
+		<span class="portfolio-card__description">{item.description[lang]}</span>
+		<span class="portfolio-card__link">
+			{displayUrl}
+			<svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round">
+				<path d="M6 4h6v6M12 4L4 12" />
+			</svg>
+		</span>
+	</span>
+</a>
+
+<style>
+	.portfolio-card {
+		display: flex;
+		flex-direction: column;
+		overflow: hidden;
+		transition: border-color 0.15s ease, transform 0.15s ease;
+	}
+
+	.portfolio-card:hover {
+		border-color: var(--accent);
+		transform: translateY(-2px);
+	}
+
+	.portfolio-card__preview {
+		display: block;
+		aspect-ratio: 8 / 5;
+		background: var(--ink-softer);
+		border-bottom: 1px solid var(--border);
+		overflow: hidden;
+	}
+
+	.portfolio-card__preview img {
+		width: 100%;
+		height: 100%;
+		object-fit: cover;
+		object-position: top;
+		transition: opacity 0.2s ease;
+	}
+
+	.portfolio-card__body {
+		display: flex;
+		flex-direction: column;
+		gap: 10px;
+		padding: 24px;
+	}
+
+	.portfolio-card__top {
+		display: flex;
+		align-items: center;
+		justify-content: space-between;
+		gap: 12px;
+	}
+
+	.portfolio-card__identity {
+		display: flex;
+		align-items: center;
+		gap: 10px;
+		min-width: 0;
+	}
+
+	.portfolio-card__logo {
+		flex: none;
+		width: 30px;
+		height: 30px;
+		border-radius: 8px;
+		overflow: hidden;
+		background: var(--ink-softer);
+		border: 1px solid var(--border);
+		display: flex;
+		align-items: center;
+		justify-content: center;
+	}
+
+	.portfolio-card__logo img {
+		width: 100%;
+		height: 100%;
+		object-fit: cover;
+	}
+
+	.portfolio-card__logo span {
+		font-family: var(--font-display);
+		font-weight: 700;
+		font-size: 13px;
+		color: var(--accent);
+	}
+
+	.portfolio-card__title {
+		font-family: var(--font-display);
+		font-weight: 700;
+		font-size: 17px;
+		color: var(--paper);
+		overflow: hidden;
+		text-overflow: ellipsis;
+		white-space: nowrap;
+	}
+
+	.portfolio-card__tags {
+		flex: none;
+		font-family: var(--font-mono);
+		font-size: 11px;
+		letter-spacing: 0.06em;
+		text-transform: uppercase;
+		color: var(--accent);
+	}
+
+	.portfolio-card__description {
+		font-size: 14px;
+		color: var(--muted);
+	}
+
+	.portfolio-card__link {
+		display: inline-flex;
+		align-items: center;
+		gap: 6px;
+		margin-top: 4px;
+		font-family: var(--font-mono);
+		font-size: 13px;
+		color: var(--muted);
+	}
+
+	.portfolio-card__link svg {
+		width: 13px;
+		height: 13px;
+	}
+
+	.portfolio-card:hover .portfolio-card__link {
+		color: var(--accent);
+	}
+</style>

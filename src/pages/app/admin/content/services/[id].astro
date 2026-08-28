@@ -1,0 +1,64 @@
+---
+import { eq } from 'drizzle-orm';
+import AppLayout from '../../../../../layouts/AppLayout.astro';
+import { db } from '../../../../../db/client';
+import { services, serviceTranslations } from '../../../../../db/schema';
+
+const user = Astro.locals.user!;
+const id = Number(Astro.params.id);
+const service = db.select().from(services).where(eq(services.id, id)).get();
+
+if (!service) {
+	return Astro.redirect('/app/admin/content/services');
+}
+
+const translations = db.select().from(serviceTranslations).where(eq(serviceTranslations.serviceId, id)).all();
+const byLang = Object.fromEntries(translations.map((t) => [t.lang, t])) as Record<'uk' | 'en' | 'et', (typeof translations)[number]>;
+
+const saved = Astro.url.searchParams.get('saved');
+---
+
+<AppLayout user={user} title={byLang.uk.title}>
+	<div class="app-header">
+		<h1>{byLang.uk.title}</h1>
+		<a href="/app/admin/content/services" class="btn btn--ghost">← Усі послуги</a>
+	</div>
+
+	{saved && <p style="color: var(--accent); font-size: 14px; margin-bottom: 14px;">Збережено.</p>}
+
+	<form method="POST" action={`/api/admin/services/${service.id}`} class="card" style="padding: 20px; max-width: 680px; display: flex; flex-direction: column; gap: 14px;">
+		{
+			(['uk', 'en', 'et'] as const).map((lang) => (
+				<details open={lang === 'uk'} class="card" style="padding: 16px;">
+					<summary style="cursor: pointer; font-family: var(--font-mono); font-size: 13px; color: var(--accent);">
+						{lang.toUpperCase()}
+					</summary>
+					<div style="display: flex; flex-direction: column; gap: 14px; margin-top: 16px;">
+						<div class="field">
+							<label for={`title_${lang}`}>Назва</label>
+							<input type="text" id={`title_${lang}`} name={`title_${lang}`} value={byLang[lang].title} required />
+						</div>
+						<div class="field">
+							<label for={`summary_${lang}`}>Короткий опис (для картки)</label>
+							<textarea id={`summary_${lang}`} name={`summary_${lang}`} required>{byLang[lang].summary}</textarea>
+						</div>
+						<div class="field">
+							<label for={`description_${lang}`}>Повний опис</label>
+							<textarea id={`description_${lang}`} name={`description_${lang}`} rows="5" required>{byLang[lang].description}</textarea>
+						</div>
+						<div class="field">
+							<label for={`features_${lang}`}>Що входить (по одному пункту в рядку)</label>
+							<textarea id={`features_${lang}`} name={`features_${lang}`} rows="6" required>{byLang[lang].features}</textarea>
+						</div>
+						<div class="field">
+							<label for={`forWhom_${lang}`}>Кому підійде (по одному пункту в рядку)</label>
+							<textarea id={`forWhom_${lang}`} name={`forWhom_${lang}`} rows="4" required>{byLang[lang].forWhom}</textarea>
+						</div>
+					</div>
+				</details>
+			))
+		}
+
+		<button type="submit" class="btn btn--primary" style="align-self: flex-start;">Зберегти</button>
+	</form>
+</AppLayout>

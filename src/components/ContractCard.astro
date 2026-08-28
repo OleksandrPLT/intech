@@ -1,0 +1,126 @@
+---
+// The actual contract document — used both inside AppLayout (normal admin
+// browsing) and standalone in "bare" mode (no AppLayout at all, for
+// PDF/print — see contract.astro's `bare` branch).
+import type { ContractTemplate, ContractData } from '../lib/contractTemplates';
+
+interface Props {
+	doc: ContractTemplate;
+	data: ContractData;
+}
+
+const { doc, data } = Astro.props;
+---
+
+<div class="receipt contract">
+	<h2 class="contract__title">{doc.docTitle}</h2>
+	<p class="contract__intro">{doc.partiesIntro}</p>
+
+	{
+		doc.sections.map((s) => (
+			<section class="contract__section">
+				<h3>{s.heading}</h3>
+				{s.paragraphs.map((p) => <p>{p}</p>)}
+			</section>
+		))
+	}
+
+	<div class="contract__signatures">
+		<div>
+			<span class="receipt__label">{doc.signature.executorLabel}</span>
+			<p>
+				{data.executorName}
+				{data.executorDetails && <><br />{data.executorDetails}</>}
+				<br />{data.executorEmail}
+			</p>
+			<p class="contract__signline">{doc.signature.nameLabel}: _______________________</p>
+			<p class="contract__signline">{doc.signature.dateLabel}: _______________________</p>
+		</div>
+		<div>
+			<span class="receipt__label">{doc.signature.payerLabel}</span>
+			<p>
+				{data.payerName}
+				{data.payerDetails && <><br />{data.payerDetails}</>}
+				<br />{data.payerEmail}
+			</p>
+			<p class="contract__signline">{doc.signature.nameLabel}: _______________________</p>
+			<p class="contract__signline">{doc.signature.dateLabel}: _______________________</p>
+		</div>
+	</div>
+</div>
+
+<style>
+	/* .receipt is the shared print-safe white-card base (see ReceiptCard.astro
+	   / InvoiceCard.astro — explicit hex colors, not var(--accent) etc.). */
+	.receipt {
+		background: #ffffff;
+		color: #1c2230;
+		border-radius: var(--radius-md);
+		padding: 40px;
+		max-width: 820px;
+		font-family: Arial, Helvetica, sans-serif;
+	}
+
+	.receipt__label {
+		font-size: 11px;
+		text-transform: uppercase;
+		letter-spacing: 0.06em;
+		color: #888;
+	}
+
+	.contract__title {
+		font-size: 19px;
+		text-align: center;
+		margin: 0 0 20px;
+	}
+
+	.contract__intro {
+		font-size: 14px;
+		line-height: 1.6;
+		margin: 0 0 24px;
+		color: #333;
+	}
+
+	.contract__section {
+		margin-bottom: 18px;
+	}
+
+	.contract__section h3 {
+		font-size: 14px;
+		margin: 0 0 8px;
+	}
+
+	.contract__section p {
+		font-size: 13px;
+		line-height: 1.6;
+		color: #333;
+		margin: 0 0 8px;
+	}
+
+	.contract__signatures {
+		display: grid;
+		grid-template-columns: 1fr 1fr;
+		gap: 32px;
+		margin-top: 32px;
+		padding-top: 20px;
+		border-top: 2px solid #1c2230;
+	}
+
+	.contract__signatures p {
+		font-size: 13px;
+		margin: 6px 0 0;
+		line-height: 1.5;
+	}
+
+	.contract__signline {
+		margin-top: 18px !important;
+	}
+
+	@media print {
+		.receipt {
+			border-radius: 0;
+			padding: 0;
+			max-width: none;
+		}
+	}
+</style>

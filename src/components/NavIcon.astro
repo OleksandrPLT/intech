@@ -1,0 +1,36 @@
+---
+interface Props {
+	name: string;
+}
+const { name } = Astro.props;
+
+const icons: Record<string, string> = {
+	dashboard: 'M4 4h7v7H4zM13 4h7v4h-7zM13 11h7v9h-7zM4 14h7v6H4z',
+	clients: 'M9 11a3.5 3.5 0 100-7 3.5 3.5 0 000 7zM3.5 20a5.5 5.5 0 0111 0M16 8.5a3 3 0 110-6M15 13.5a5 5 0 015 5',
+	projects: 'M3 7a1 1 0 011-1h5l2 2h9a1 1 0 011 1v9a1 1 0 01-1 1H4a1 1 0 01-1-1V7z',
+	leads: 'M3 4h18l-7 9v6l-4 2v-8L3 4z',
+	tickets: 'M4 5h16v6a2 2 0 000 4v6H4v-6a2 2 0 000-4V5zM10 9v6',
+	comments: 'M4 4h16v11H8l-4 4V4z',
+	news: 'M5 3h11l3 3v15H5zM16 3v3h3M8 10h6M8 13h6M8 16h4',
+	portfolio: 'M4 8h16v11H4zM8 8V5h8v3M4 12h16',
+	services: 'M12 3l9 5-9 5-9-5 9-5zM3 13l9 5 9-5M3 8v5M21 8v5',
+	api: 'M9 15a5 5 0 114.5-7.2M9 15a5 5 0 004.5-7.2M9 15l-5 5m8-8l6.5-6.5a2 2 0 012.8 2.8L15 15h-2v-2z',
+	settings: 'M12 9a3 3 0 100 6 3 3 0 000-6zM4.5 12a7.4 7.4 0 01.1-1.3l-1.9-1.5 2-3.4 2.3.7a7.6 7.6 0 012.2-1.3L9.6 3h4l.4 2.2c.8.3 1.6.7 2.2 1.3l2.3-.7 2 3.4-1.9 1.5c.1.4.1.9.1 1.3s0 .9-.1 1.3l1.9 1.5-2 3.4-2.3-.7a7.6 7.6 0 01-2.2 1.3L13.6 21h-4l-.4-2.2a7.6 7.6 0 01-2.2-1.3l-2.3.7-2-3.4 1.9-1.5c-.1-.4-.1-.8-.1-1.3z',
+	fields: 'M4 6h16M4 6a2 2 0 104 0 2 2 0 00-4 0zM4 18h16M16 18a2 2 0 104 0 2 2 0 00-4 0zM4 12h16M9 12a2 2 0 104 0 2 2 0 00-4 0z',
+	tasks: 'M9 6h11M9 12h11M9 18h11M4 6l1 1 2-2M4 12l1 1 2-2M4 18l1 1 2-2',
+	finance: 'M12 2v20M17 5.5c0-1.9-2.2-3.5-5-3.5S7 3.6 7 5.5 9.2 9 12 9s5 1.6 5 3.5-2.2 3.5-5 3.5-5-1.6-5-3.5',
+};
+const path = icons[name] ?? icons.dashboard;
+---
+
+<svg class="nav-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+	<path d={path} />
+</svg>
+
+<style>
+	.nav-icon {
+		width: 17px;
+		height: 17px;
+		flex: none;
+	}
+</style>

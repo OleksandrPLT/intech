@@ -1,0 +1,152 @@
+---
+import { eq, and, asc } from 'drizzle-orm';
+import { db } from '../db/client';
+import { newsComments } from '../db/schema';
+import type { Lang } from '../i18n/ui';
+import { useTranslations } from '../i18n/utils';
+
+interface Props {
+	slug: string;
+	lang: Lang;
+}
+
+const { slug, lang } = Astro.props;
+const t = useTranslations(lang);
+
+const comments = db
+	.select()
+	.from(newsComments)
+	.where(and(eq(newsComments.slug, slug), eq(newsComments.approved, true)))
+	.orderBy(asc(newsComments.createdAt))
+	.all();
+
+const dateLocale = lang === 'uk' ? 'uk-UA' : lang === 'et' ? 'et-EE' : 'en-GB';
+---
+
+<section class="news-comments">
+	<h2>{t('news.comments.title')}</h2>
+
+	<p id="comment-pending" class="comment-pending" hidden>{t('news.comments.pending')}</p>
+
+	{
+		comments.length === 0 ? (
+			<p class="news-comments__empty">{t('news.comments.empty')}</p>
+		) : (
+			<div class="news-comments__list">
+				{comments.map((c) => (
+					<div class="card news-comment">
+						<div class="news-comment__meta">
+							<strong>{c.name}</strong>
+							<time datetime={c.createdAt}>
+								{new Date(c.createdAt).toLocaleDateString(dateLocale, { year: 'numeric', month: 'long', day: 'numeric' })}
+							</time>
+						</div>
+						<p>{c.body}</p>
+					</div>
+				))}
+			</div>
+		)
+	}
+
+	<form method="POST" action="/api/public/news-comments" class="card news-comment-form" id="comment-form">
+		<input type="hidden" name="slug" value={slug} />
+		<div class="field">
+			<label for="comment-name">{t('news.comments.name')}</label>
+			<input type="text" id="comment-name" name="name" required />
+		</div>
+		<div class="field">
+			<label for="comment-body">{t('news.comments.body')}</label>
+			<textarea id="comment-body" name="body" required />
+		</div>
+		<div class="hp-field" aria-hidden="true">
+			<label for="comment-website">Website</label>
+			<input type="text" id="comment-website" name="website" tabindex="-1" autocomplete="off" />
+		</div>
+		<button type="submit" class="btn btn--primary" style="align-self: flex-start;">{t('news.comments.submit')}</button>
+	</form>
+</section>
+
+<script>
+	const params = new URLSearchParams(location.search);
+	if (params.get('commented') === '1') {
+		document.getElementById('comment-pending')?.removeAttribute('hidden');
+		document.getElementById('comment-form')?.setAttribute('hidden', '');
+	}
+</script>
+
+<style>
+	.news-comments {
+		max-width: 680px;
+	}
+
+	.news-comments h2 {
+		font-size: 20px;
+		margin-bottom: 20px;
+	}
+
+	.comment-pending {
+		max-width: 560px;
+		padding: 14px 18px;
+		border: 1px solid var(--accent);
+		border-radius: var(--radius-sm);
+		background: color-mix(in srgb, var(--accent) 12%, var(--ink-soft));
+		color: var(--paper);
+		font-size: 14px;
+		margin-bottom: 20px;
+	}
+
+	.news-comments__empty {
+		color: var(--muted);
+		font-size: 14px;
+	}
+
+	.news-comments__list {
+		display: flex;
+		flex-direction: column;
+		gap: 12px;
+		margin-bottom: 28px;
+	}
+
+	.news-comment {
+		padding: 18px 20px;
+	}
+
+	.news-comment__meta {
+		display: flex;
+		justify-content: space-between;
+		gap: 12px;
+		margin-bottom: 8px;
+		font-size: 13px;
+	}
+
+	.news-comment__meta strong {
+		color: var(--paper);
+	}
+
+	.news-comment__meta time {
+		font-family: var(--font-mono);
+		color: var(--muted);
+	}
+
+	.news-comment p {
+		margin: 0;
+		font-size: 15px;
+		color: var(--paper);
+	}
+
+	.news-comment-form {
+		padding: 24px;
+		display: flex;
+		flex-direction: column;
+		gap: 16px;
+	}
+
+	.hp-field {
+		position: absolute;
+		width: 1px;
+		height: 1px;
+		overflow: hidden;
+		opacity: 0;
+		pointer-events: none;
+	}
+</style>

@@ -1,0 +1,182 @@
+---
+import { eq, desc } from 'drizzle-orm';
+import AppLayout from '../../../../layouts/AppLayout.astro';
+import { db } from '../../../../db/client';
+import { projects, projectPayments } from '../../../../db/schema';
+import { ledgerTypeLabels } from '../../../../lib/labels';
+import { netByCurrency } from '../../../../lib/payments';
+
+const user = Astro.locals.user!;
+
+const allProjects = db.select({ id: projects.id, name: projects.name }).from(projects).orderBy(projects.name).all();
+const projectNameById = new Map(allProjects.map((p) => [p.id, p.name]));
+
+const projectFilter = Astro.url.searchParams.get('project') || '';
+const typeFilter = Astro.url.searchParams.get('type') || '';
+
+let entries = db.select().from(projectPayments).orderBy(desc(projectPayments.paidAt), desc(projectPayments.createdAt)).all();
+if (projectFilter) entries = entries.filter((e) => e.projectId === Number(projectFilter));
+if (typeFilter === 'income' || typeFilter === 'expense') entries = entries.filter((e) => e.type === typeFilter);
+
+const totals = netByCurrency(entries);
+const incomeTotals = netByCurrency(entries.filter((e) => e.type === 'income'));
+const expenseTotals = netByCurrency(entries.filter((e) => e.type === 'expense'));
+const allCurrencies = Array.from(new Set([...Object.keys(incomeTotals), ...Object.keys(expenseTotals)]));
+
+const saved = Astro.url.searchParams.get('saved');
+const error = Astro.url.searchParams.get('error');
+const today = new Date().toISOString().slice(0, 10);
+---
+
+<AppLayout user={user} title="Фінанси">
+	<div class="app-header">
+		<h1>Фінанси — головна книга</h1>
+	</div>
+
+	<p style="color: var(--muted); margin-top: -14px; margin-bottom: 20px; font-size: 14px; max-width: 620px;">
+		Усі доходи й витрати за всіма проектами в одному місці. Кожен запис прив'язаний до ID проекту — деталі й
+		інвойс по конкретному платежу лишаються на сторінці проекту.
+	</p>
+
+	{saved && <p style="color: var(--accent); font-size: 14px; margin-bottom: 16px;">Збережено.</p>}
+	{error && <p class="form-error" style="margin-bottom: 16px;">Перевірте суму та проект.</p>}
+
+	{
+		allCurrencies.length > 0 && (
+			<div style="display: flex; gap: 10px; flex-wrap: wrap; margin-bottom: 20px;">
+				{allCurrencies.map((cur) => (
+					<div class="card stat-card">
+						<div class="stat-card__value" style={((totals[cur] ?? 0) < 0 ? 'color: #ff8a80;' : '')}>
+							{(totals[cur] ?? 0).toFixed(2)} {cur}
+						</div>
+						<div class="stat-card__label">
+							Баланс · дохід {(incomeTotals[cur] ?? 0).toFixed(2)} / витрата {(expenseTotals[cur] ?? 0).toFixed(2)}
+						</div>
+					</div>
+				))}
+			</div>
+		)
+	}
+
+	<form method="GET" style="display: flex; gap: 10px; margin-bottom: 16px; flex-wrap: wrap;">
+		<select name="project" onchange="this.form.submit()" style="font: inherit; font-size: 13px; background: var(--ink-soft); color: var(--paper); border: 1px solid var(--border); border-radius: 8px; padding: 8px 12px;">
+			<option value="">— усі проекти —</option>
+			{allProjects.map((p) => (
+				<option value={p.id} selected={String(p.id) === projectFilter}>{p.name}</option>
+			))}
+		</select>
+		<select name="type" onchange="this.form.submit()" style="font: inherit; font-size: 13px; background: var(--ink-soft); color: var(--paper); border: 1px solid var(--border); border-radius: 8px; padding: 8px 12px;">
+			<option value="">— дохід і витрата —</option>
+			<option value="income" selected={typeFilter === 'income'}>Лише дохід</option>
+			<option value="expense" selected={typeFilter === 'expense'}>Лише витрата</option>
+		</select>
+	</form>
+
+	<div class="card table-wrap" style="margin-bottom: 20px;">
+		<table class="data-table">
+			<thead>
+				<tr>
+					<th>Дата</th>
+					<th>Проект</th>
+					<th>Тип</th>
+					<th>Сума</th>
+					<th>Нотатка</th>
+					<th>Файл</th>
+					<th>Квитанція</th>
+					<th></th>
+				</tr>
+			</thead>
+			<tbody>
+				{
+					entries.length === 0 ? (
+						<tr>
+							<td colspan="8" style="color: var(--muted);">Записів ще немає.</td>
+						</tr>
+					) : (
+						entries.map((e) => (
+							<tr>
+								<td>{e.paidAt ?? new Date(e.createdAt).toLocaleDateString('uk-UA')}</td>
+								<td>
+									<a href={`/app/admin/projects/${e.projectId}#finance`}>{projectNameById.get(e.projectId) ?? '—'}</a>
+								</td>
+								<td>
+									<span class={`badge ${e.type === 'income' ? 'badge--accent' : 'badge--blue'}`}>{ledgerTypeLabels[e.type] ?? e.type}</span>
+								</td>
+								<td style="font-family: var(--font-mono);">
+									{e.type === 'expense' ? '−' : '+'}{e.amount} {e.currency}
+								</td>
+								<td>{e.note}</td>
+								<td>
+									{e.receiptFileId ? (
+										<a href={`/api/project-files/${e.receiptFileId}`}>Файл</a>
+									) : (
+										<span style="color: var(--muted);">—</span>
+									)}
+								</td>
+								<td>
+									{e.type === 'income' ? (
+										<a href={`/app/admin/projects/${e.projectId}/receipt?payment=${e.id}`} target="_blank">Переглянути</a>
+									) : (
+										<span style="color: var(--muted);">—</span>
+									)}
+								</td>
+								<td>
+									<form method="POST" action={`/api/admin/payments/${e.id}/delete`} onsubmit="return confirm('Видалити запис?')">
+										<input type="hidden" name="returnTo" value="finance" />
+										<button type="submit" class="btn btn--ghost" style="padding: 5px 10px; font-size: 12px;">✕</button>
+									</form>
+								</td>
+							</tr>
+						))
+					)
+				}
+			</tbody>
+		</table>
+	</div>
+
+	<div class="card" style="padding: 18px; max-width: 640px;">
+		<h2 style="font-size: 15px; margin: 0 0 14px;">Новий запис</h2>
+		<form method="POST" action="/api/admin/finance/entries" enctype="multipart/form-data" class="form-grid">
+			<div class="field">
+				<label for="projectId">Проект</label>
+				<select id="projectId" name="projectId" required>
+					{allProjects.map((p) => (
+						<option value={p.id} selected={String(p.id) === projectFilter}>{p.name}</option>
+					))}
+				</select>
+			</div>
+			<div class="field">
+				<label for="type">Тип</label>
+				<select id="type" name="type">
+					<option value="income">Дохід</option>
+					<option value="expense">Витрата</option>
+				</select>
+			</div>
+			<div class="field">
+				<label for="amount">Сума</label>
+				<input type="text" id="amount" name="amount" required placeholder="1000" />
+			</div>
+			<div class="field">
+				<label for="currency">Валюта</label>
+				<select id="currency" name="currency">
+					<option value="UAH">UAH</option>
+					<option value="USD">USD</option>
+					<option value="EUR">EUR</option>
+				</select>
+			</div>
+			<div class="field">
+				<label for="paidAt">Дата</label>
+				<input type="date" id="paidAt" name="paidAt" value={today} />
+			</div>
+			<div class="field">
+				<label for="receipt">Квитанція (необов'язково)</label>
+				<input type="file" id="receipt" name="receipt" />
+			</div>
+			<div class="field" style="grid-column: 1 / -1;">
+				<label for="note">Нотатка</label>
+				<input type="text" id="note" name="note" placeholder="напр. Хостинг за серпень" />
+			</div>
+			<button type="submit" class="btn btn--primary" style="grid-column: 1 / -1; justify-self: start;">Додати запис</button>
+		</form>
+	</div>
+</AppLayout>

@@ -1,0 +1,65 @@
+---
+interface Props {
+	title: string;
+	label: string;
+	copiedLabel: string;
+}
+const { title, label, copiedLabel } = Astro.props;
+---
+
+<button type="button" class="btn btn--ghost share-btn" data-title={title} data-label={label} data-copied-label={copiedLabel}>
+	<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round">
+		<circle cx="18" cy="5" r="2.6" />
+		<circle cx="6" cy="12" r="2.6" />
+		<circle cx="18" cy="19" r="2.6" />
+		<path d="M8.3 10.7l7.4-4.2M8.3 13.3l7.4 4.2" />
+	</svg>
+	<span class="share-btn__label">{label}</span>
+</button>
+
+<script>
+	document.querySelectorAll<HTMLButtonElement>('.share-btn').forEach((btn) => {
+		btn.addEventListener('click', async () => {
+			const url = window.location.href;
+			const title = btn.dataset.title || document.title;
+			const label = btn.dataset.label || '';
+			const copiedLabel = btn.dataset.copiedLabel || '';
+			const labelEl = btn.querySelector('.share-btn__label');
+
+			if (navigator.share) {
+				try {
+					await navigator.share({ title, url });
+					return;
+				} catch {
+					// user cancelled the native share sheet — fall through to nothing
+					return;
+				}
+			}
+
+			try {
+				await navigator.clipboard.writeText(url);
+				if (labelEl) {
+					labelEl.textContent = copiedLabel;
+					setTimeout(() => {
+						labelEl.textContent = label;
+					}, 2000);
+				}
+			} catch {
+				// clipboard unavailable — nothing we can do without a server round-trip
+			}
+		});
+	});
+</script>
+
+<style>
+	.share-btn {
+		display: inline-flex;
+		align-items: center;
+		gap: 8px;
+	}
+
+	.share-btn svg {
+		width: 15px;
+		height: 15px;
+	}
+</style>

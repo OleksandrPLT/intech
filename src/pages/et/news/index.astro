@@ -1,0 +1,144 @@
+---
+import BaseLayout from '../../../layouts/BaseLayout.astro';
+import NewsCover from '../../../components/NewsCover.astro';
+import { sortedNews } from '../../../data/news';
+import { useTranslations, localeUrl } from '../../../i18n/utils';
+
+const lang = 'et' as const;
+const t = useTranslations(lang);
+const items = sortedNews();
+const dateLocale = 'et-EE';
+---
+
+<BaseLayout lang={lang} title={t('meta.news.title')} description={t('meta.news.description')}>
+	<section class="section page-hero">
+		<div class="container">
+			<span class="eyebrow">{t('news.eyebrow')}</span>
+			<h1>{t('news.title')}</h1>
+			<p class="page-hero__lede">{t('news.lede')}</p>
+		</div>
+	</section>
+
+	<section class="section section--tight">
+		<div class="container">
+			{
+				items.length === 0 ? (
+					<p style="color: var(--muted);">{t('news.empty')}</p>
+				) : (
+					<div class="news-list">
+						{items.map((item) => (
+							<a href={localeUrl(lang, `/news/${item.slug}`)} class="card news-item">
+								<div class="news-item__cover">
+									<NewsCover image={item.image} icon={item.icon} title={item.title[lang]} compact />
+								</div>
+								<div class="news-item__body">
+									<time class="news-item__date" datetime={item.date}>
+										{new Date(item.date).toLocaleDateString(dateLocale, { year: 'numeric', month: 'long', day: 'numeric' })}
+									</time>
+									<h2 class="news-item__title">{item.title[lang]}</h2>
+									<p class="news-item__excerpt">{item.excerpt[lang]}</p>
+									<span class="news-item__link">{t('news.readMore')} →</span>
+								</div>
+							</a>
+						))}
+					</div>
+				)
+			}
+		</div>
+	</section>
+</BaseLayout>
+
+<style>
+	.page-hero {
+		padding-bottom: 0;
+	}
+
+	h1 {
+		font-size: clamp(32px, 4.6vw, 48px);
+		margin-top: 16px;
+	}
+
+	.page-hero__lede {
+		font-size: 18px;
+		max-width: 620px;
+	}
+
+	.news-list {
+		display: flex;
+		flex-direction: column;
+		gap: 20px;
+		max-width: 760px;
+	}
+
+	.news-item {
+		display: flex;
+		gap: 24px;
+		overflow: hidden;
+		transition: border-color 0.15s ease;
+	}
+
+	.news-item:hover {
+		border-color: var(--accent);
+	}
+
+	.news-item__cover {
+		flex: none;
+		width: 160px;
+	}
+
+	.news-item__cover :global(.news-cover) {
+		border-radius: 0;
+		border-width: 0 1px 0 0;
+		height: 100%;
+	}
+
+	.news-item__body {
+		display: flex;
+		flex-direction: column;
+		gap: 8px;
+		padding: 24px 24px 24px 0;
+		min-width: 0;
+	}
+
+	.news-item__date {
+		font-family: var(--font-mono);
+		font-size: 12px;
+		color: var(--muted);
+	}
+
+	.news-item__title {
+		font-size: 20px;
+		margin: 0;
+	}
+
+	.news-item__excerpt {
+		font-size: 15px;
+		margin: 0;
+	}
+
+	.news-item__link {
+		font-family: var(--font-mono);
+		font-size: 13px;
+		color: var(--paper);
+		margin-top: 4px;
+	}
+
+	.news-item:hover .news-item__link {
+		color: var(--accent);
+	}
+
+	@media (max-width: 620px) {
+		.news-item {
+			flex-direction: column;
+		}
+		.news-item__cover {
+			width: 100%;
+		}
+		.news-item__cover :global(.news-cover) {
+			border-width: 0 0 1px;
+		}
+		.news-item__body {
+			padding: 20px;
+		}
+	}
+</style>

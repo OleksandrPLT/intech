@@ -1,0 +1,248 @@
+---
+import Logo from './Logo.astro';
+import ThemeToggle from './ThemeToggle.astro';
+import { languages, type Lang } from '../i18n/ui';
+import { useTranslations, localizePath, localeUrl } from '../i18n/utils';
+
+interface Props {
+	lang: Lang;
+}
+
+const { lang } = Astro.props;
+const t = useTranslations(lang);
+const pathname = Astro.url.pathname;
+
+const navItems: {
+	key: 'nav.home' | 'nav.services' | 'nav.portfolio' | 'nav.news' | 'nav.about' | 'nav.contact';
+	path: string;
+}[] = [
+	{ key: 'nav.home', path: '/' },
+	{ key: 'nav.services', path: '/services' },
+	{ key: 'nav.portfolio', path: '/portfolio' },
+	{ key: 'nav.news', path: '/news' },
+	{ key: 'nav.about', path: '/about' },
+	{ key: 'nav.contact', path: '/contact' },
+];
+---
+
+<header class="header">
+	<div class="container header__inner">
+		<Logo href={localeUrl(lang, '/')} size="sm" tagline />
+
+		<button class="nav-toggle" id="nav-toggle" aria-expanded="false" aria-controls="primary-nav">
+			<span class="visually-hidden">Menu</span>
+			<span class="nav-toggle__bar"></span>
+			<span class="nav-toggle__bar"></span>
+			<span class="nav-toggle__bar"></span>
+		</button>
+
+		<nav id="primary-nav" class="nav">
+			<ul class="nav__list">
+				{
+					navItems.map((item) => {
+						const href = localeUrl(lang, item.path);
+						const active = pathname === href || (item.path !== '/' && pathname.startsWith(href));
+						return (
+							<li>
+								<a href={href} class:list={['nav__link', { 'nav__link--active': active }]}>
+									{t(item.key)}
+								</a>
+							</li>
+						);
+					})
+				}
+			</ul>
+
+			<div class="nav__actions">
+				<ThemeToggle size="sm" />
+				<div class="lang-switch">
+					{
+						(Object.keys(languages) as Lang[]).map((code) => (
+							<a
+								href={localizePath(pathname, lang, code)}
+								class:list={['lang-switch__link', { 'lang-switch__link--active': code === lang }]}
+							>
+								{languages[code]}
+							</a>
+						))
+					}
+				</div>
+				<a href={localeUrl(lang, '/contact')} class="btn btn--primary">
+					{t('nav.cta')}
+				</a>
+			</div>
+		</nav>
+	</div>
+</header>
+
+<script>
+	const toggle = document.getElementById('nav-toggle');
+	const nav = document.getElementById('primary-nav');
+	toggle?.addEventListener('click', () => {
+		const expanded = toggle.getAttribute('aria-expanded') === 'true';
+		toggle.setAttribute('aria-expanded', String(!expanded));
+		nav?.classList.toggle('nav--open');
+	});
+</script>
+
+<style>
+	.header {
+		position: sticky;
+		top: 0;
+		z-index: 40;
+		background: color-mix(in srgb, var(--ink) 88%, transparent);
+		backdrop-filter: blur(10px);
+		border-bottom: 1px solid var(--border);
+	}
+
+	.header__inner {
+		display: flex;
+		align-items: center;
+		justify-content: space-between;
+		height: 76px;
+	}
+
+	.nav-toggle {
+		display: none;
+		flex-direction: column;
+		justify-content: center;
+		gap: 5px;
+		width: 40px;
+		height: 40px;
+		background: transparent;
+		border: 1px solid var(--border);
+		border-radius: 8px;
+		cursor: pointer;
+	}
+
+	.nav-toggle__bar {
+		display: block;
+		height: 2px;
+		margin: 0 9px;
+		background: var(--paper);
+		border-radius: 1px;
+	}
+
+	.nav {
+		display: flex;
+		align-items: center;
+		gap: 24px;
+	}
+
+	.nav__list {
+		display: flex;
+		align-items: center;
+		gap: 20px;
+	}
+
+	.nav__link {
+		font-family: var(--font-mono);
+		font-size: 14px;
+		letter-spacing: 0.03em;
+		color: var(--muted);
+		white-space: nowrap;
+		transition: color 0.15s ease;
+	}
+
+	.nav__link:hover {
+		color: var(--paper);
+	}
+
+	.nav__link--active {
+		color: var(--accent);
+	}
+
+	.nav__actions {
+		display: flex;
+		align-items: center;
+		gap: 14px;
+	}
+
+	.nav__actions .btn {
+		padding: 11px 20px;
+		font-size: 13px;
+	}
+
+	.lang-switch {
+		display: flex;
+		align-items: center;
+		gap: 4px;
+		font-family: var(--font-mono);
+		font-size: 13px;
+		border: 1px solid var(--border);
+		border-radius: 999px;
+		padding: 4px;
+	}
+
+	.lang-switch__link {
+		padding: 4px 10px;
+		border-radius: 999px;
+		color: var(--muted);
+	}
+
+	.lang-switch__link--active {
+		background: var(--ink-soft);
+		color: var(--accent);
+	}
+
+	@media (max-width: 1180px) {
+		.nav-toggle {
+			display: flex;
+		}
+
+		.nav {
+			position: fixed;
+			inset: 76px 0 0 0;
+			flex-direction: column;
+			align-items: stretch;
+			justify-content: flex-start;
+			gap: 0;
+			padding: 24px;
+			background: var(--ink);
+			border-top: 1px solid var(--border);
+			transform: translateY(-8px);
+			opacity: 0;
+			visibility: hidden;
+			pointer-events: none;
+			transition: opacity 0.15s ease, transform 0.15s ease;
+		}
+
+		.nav--open {
+			opacity: 1;
+			visibility: visible;
+			pointer-events: auto;
+			transform: translateY(0);
+		}
+
+		.nav__list {
+			flex-direction: column;
+			align-items: flex-start;
+			gap: 4px;
+			width: 100%;
+		}
+
+		.nav__link {
+			display: block;
+			width: 100%;
+			padding: 14px 4px;
+			font-size: 16px;
+			border-bottom: 1px solid var(--border);
+		}
+
+		.nav__actions {
+			flex-direction: column;
+			align-items: stretch;
+			width: 100%;
+			margin-top: 24px;
+			gap: 16px;
+		}
+
+		.lang-switch {
+			align-self: flex-start;
+		}
+
+		.nav__actions .btn {
+			justify-content: center;
+		}
+	}
+</style>

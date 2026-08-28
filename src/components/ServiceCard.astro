@@ -1,0 +1,87 @@
+---
+import ServiceIcon from './ServiceIcon.astro';
+import type { Service } from '../data/services';
+import type { Lang } from '../i18n/ui';
+import { useTranslations, localeUrl } from '../i18n/utils';
+
+interface Props {
+	service: Service;
+	lang: Lang;
+}
+
+const { service, lang } = Astro.props;
+const t = useTranslations(lang);
+const content = service[lang];
+const href = localeUrl(lang, `/services/${service.slug}`);
+---
+
+<a href={href} class="service-card card">
+	<div class="service-card__icon">
+		<ServiceIcon name={service.icon} />
+	</div>
+	<h3 class="service-card__title">{content.title}</h3>
+	<p class="service-card__summary">{content.summary}</p>
+	<span class="service-card__link">
+		{t('services.learnMore')}
+		<svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round">
+			<path d="M3 8h10M9 4l4 4-4 4" />
+		</svg>
+	</span>
+</a>
+
+<style>
+	.service-card {
+		display: flex;
+		flex-direction: column;
+		padding: 32px;
+		transition: border-color 0.15s ease, transform 0.15s ease;
+	}
+
+	.service-card:hover {
+		border-color: var(--accent);
+		transform: translateY(-2px);
+	}
+
+	.service-card__icon {
+		width: 48px;
+		height: 48px;
+		border-radius: 12px;
+		background: var(--ink-softer);
+		color: var(--accent);
+		display: flex;
+		align-items: center;
+		justify-content: center;
+		margin-bottom: 24px;
+	}
+
+	.service-card__icon svg {
+		width: 24px;
+		height: 24px;
+	}
+
+	.service-card__title {
+		font-size: 20px;
+		margin-bottom: 10px;
+	}
+
+	.service-card__summary {
+		font-size: 15px;
+		margin-bottom: 20px;
+		flex-grow: 1;
+	}
+
+	.service-card__link {
+		display: inline-flex;
+		align-items: center;
+		gap: 6px;
+		font-family: var(--font-mono);
+		font-size: 13px;
+		letter-spacing: 0.03em;
+		color: var(--paper);
+	}
+
+	.service-card__link svg {
+		width: 14px;
+		height: 14px;
+	}
+</style>

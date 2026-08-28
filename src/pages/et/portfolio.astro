@@ -1,0 +1,75 @@
+---
+import BaseLayout from '../../layouts/BaseLayout.astro';
+import PortfolioCard from '../../components/PortfolioCard.astro';
+import { getPortfolio } from '../../data/portfolio';
+import { useTranslations } from '../../i18n/utils';
+
+const lang = 'et' as const;
+const t = useTranslations(lang);
+const portfolio = getPortfolio();
+---
+
+<BaseLayout lang={lang} title={t('meta.portfolio.title')} description={t('meta.portfolio.description')}>
+	<section class="section page-hero">
+		<div class="container">
+			<span class="eyebrow">{t('portfolio.eyebrow')}</span>
+			<h1>{t('portfolio.title')}</h1>
+			<p class="page-hero__lede">{t('portfolio.lede')}</p>
+		</div>
+	</section>
+
+	<section class="section section--tight">
+		<div class="container">
+			{
+				portfolio.length > 0 ? (
+					<div class="portfolio-grid">
+						{portfolio.map((item) => (
+							<PortfolioCard item={item} lang={lang} />
+						))}
+					</div>
+				) : (
+					<p class="portfolio-empty">{t('portfolio.empty')}</p>
+				)
+			}
+		</div>
+	</section>
+</BaseLayout>
+
+<style>
+	.page-hero {
+		padding-bottom: 0;
+	}
+
+	h1 {
+		font-size: clamp(32px, 4.6vw, 48px);
+		margin-top: 16px;
+	}
+
+	.page-hero__lede {
+		font-size: 18px;
+		max-width: 620px;
+	}
+
+	.portfolio-grid {
+		display: grid;
+		grid-template-columns: repeat(3, 1fr);
+		gap: 24px;
+	}
+
+	.portfolio-empty {
+		color: var(--muted);
+		font-size: 16px;
+	}
+
+	@media (max-width: 860px) {
+		.portfolio-grid {
+			grid-template-columns: 1fr 1fr;
+		}
+	}
+
+	@media (max-width: 620px) {
+		.portfolio-grid {
+			grid-template-columns: 1fr;
+		}
+	}
+</style>

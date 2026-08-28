@@ -1,0 +1,99 @@
+---
+import KursorMark from './KursorMark.astro';
+import type { Lang } from '../i18n/ui';
+import { useTranslations } from '../i18n/utils';
+
+interface Props {
+	lang: Lang;
+}
+
+const { lang } = Astro.props;
+const t = useTranslations(lang);
+const features = [0, 1, 2, 3, 4, 5] as const;
+---
+
+<section class="section section--tight kursor-section">
+	<div class="container">
+		<div class="kursor-head">
+			<KursorMark size="lg" />
+			<div>
+				<span class="eyebrow">{t('home.kursor.eyebrow')}</span>
+				<h2>{t('home.kursor.title')}</h2>
+				<p class="kursor-lede">{t('home.kursor.lede')}</p>
+			</div>
+		</div>
+
+		<div class="kursor-grid">
+			{
+				features.map((i) => (
+					<div class="kursor-item card">
+						<h3>{t(`home.kursor.features.${i}.title` as any)}</h3>
+						<p>{t(`home.kursor.features.${i}.text` as any)}</p>
+					</div>
+				))
+			}
+		</div>
+	</div>
+</section>
+
+<style>
+	.kursor-section {
+		border-top: 1px solid var(--border);
+		border-bottom: 1px solid var(--border);
+	}
+
+	.kursor-head {
+		display: flex;
+		align-items: flex-start;
+		gap: 24px;
+		margin-bottom: 36px;
+	}
+
+	.kursor-head h2 {
+		margin: 10px 0 10px;
+		font-size: clamp(24px, 3vw, 32px);
+	}
+
+	.kursor-lede {
+		max-width: 620px;
+		margin: 0;
+		font-size: 16px;
+	}
+
+	.kursor-grid {
+		display: grid;
+		grid-template-columns: repeat(3, 1fr);
+		gap: 16px;
+	}
+
+	.kursor-item {
+		padding: 20px;
+	}
+
+	.kursor-item h3 {
+		font-size: 15px;
+		margin-bottom: 8px;
+		color: var(--paper);
+	}
+
+	.kursor-item p {
+		font-size: 14px;
+		margin: 0;
+	}
+
+	@media (max-width: 860px) {
+		.kursor-grid {
+			grid-template-columns: 1fr 1fr;
+		}
+	}
+
+	@media (max-width: 620px) {
+		.kursor-head {
+			flex-direction: column;
+			gap: 16px;
+		}
+		.kursor-grid {
+			grid-template-columns: 1fr;
+		}
+	}
+</style>

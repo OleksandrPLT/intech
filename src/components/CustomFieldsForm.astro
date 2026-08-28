@@ -1,0 +1,50 @@
+---
+import type { FieldDef } from '../lib/customFields';
+
+interface Props {
+	defs: FieldDef[];
+	values?: Record<string, string>;
+}
+
+const { defs, values = {} } = Astro.props;
+---
+
+{
+	defs.length > 0 && (
+		<div class="form-grid" style="grid-column: 1 / -1;">
+			{defs.map((def) => {
+				const value = values[def.key] ?? '';
+				const name = `field_${def.id}`;
+				return (
+					<div class="field" style={def.type === 'textarea' ? 'grid-column: 1 / -1;' : undefined}>
+						<label for={name}>
+							{def.label}
+							{def.required && ' *'}
+						</label>
+						{def.type === 'textarea' && <textarea id={name} name={name} required={def.required}>{value}</textarea>}
+						{def.type === 'select' && (
+							<select id={name} name={name} required={def.required}>
+								<option value="">—</option>
+								{(def.options ?? '')
+									.split(',')
+									.map((opt) => opt.trim())
+									.filter(Boolean)
+									.map((opt) => (
+										<option value={opt} selected={opt === value}>
+											{opt}
+										</option>
+									))}
+							</select>
+						)}
+						{def.type === 'boolean' && (
+							<input type="checkbox" id={name} name={name} value="1" checked={value === '1'} style="width: 18px; height: 18px;" />
+						)}
+						{def.type === 'number' && <input type="number" id={name} name={name} value={value} required={def.required} />}
+						{def.type === 'date' && <input type="date" id={name} name={name} value={value} required={def.required} />}
+						{def.type === 'text' && <input type="text" id={name} name={name} value={value} required={def.required} />}
+					</div>
+				);
+			})}
+		</div>
+	)
+}

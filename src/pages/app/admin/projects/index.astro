@@ -1,0 +1,126 @@
+---
+import { desc, eq } from 'drizzle-orm';
+import AppLayout from '../../../../layouts/AppLayout.astro';
+import { db } from '../../../../db/client';
+import { projects, users } from '../../../../db/schema';
+import { projectStatusLabels, paymentStatusLabels } from '../../../../lib/labels';
+
+const user = Astro.locals.user!;
+
+const allProjects = db
+	.select({
+		id: projects.id,
+		name: projects.name,
+		websiteUrl: projects.websiteUrl,
+		status: projects.status,
+		paymentStatus: projects.paymentStatus,
+		createdAt: projects.createdAt,
+		clientId: projects.clientId,
+		clientName: users.name,
+	})
+	.from(projects)
+	.leftJoin(users, eq(projects.clientId, users.id))
+	.orderBy(desc(projects.createdAt))
+	.all();
+
+const clients = db.select().from(users).where(eq(users.role, 'client')).all();
+
+const q = (Astro.url.searchParams.get('q') || '').trim().toLowerCase();
+const clientFilter = Astro.url.searchParams.get('client') || '';
+const statusFilter = Astro.url.searchParams.get('status') || '';
+const paymentFilter = Astro.url.searchParams.get('payment') || '';
+
+const filtered = allProjects
+	.filter((p) => !clientFilter || String(p.clientId) === clientFilter)
+	.filter((p) => !statusFilter || p.status === statusFilter)
+	.filter((p) => !paymentFilter || p.paymentStatus === paymentFilter)
+	.filter(
+		(p) =>
+			!q ||
+			p.name.toLowerCase().includes(q) ||
+			(p.websiteUrl ?? '').toLowerCase().includes(q) ||
+			(p.clientName ?? '').toLowerCase().includes(q),
+	);
+---
+
+<AppLayout user={user} title="Проекти">
+	<div class="app-header">
+		<h1>Проекти</h1>
+		<a href="/app/admin/projects/new" class="btn btn--primary">+ Новий проект</a>
+	</div>
+
+	<form method="GET" style="display: flex; gap: 12px; margin-bottom: 14px; flex-wrap: wrap;">
+		<input
+			type="text"
+			name="q"
+			placeholder="Пошук за назвою, сайтом або клієнтом…"
+			value={q}
+			style="flex: 1; min-width: 220px; font: inherit; background: var(--ink-soft); color: var(--paper); border: 1px solid var(--border); border-radius: 8px; padding: 10px 14px;"
+		/>
+		<select name="client" style="font: inherit; background: var(--ink-soft); color: var(--paper); border: 1px solid var(--border); border-radius: 8px; padding: 10px 14px;">
+			<option value="">Усі клієнти</option>
+			{clients.map((c) => (
+				<option value={c.id} selected={String(c.id) === clientFilter}>{c.name}</option>
+			))}
+		</select>
+		<select name="status" style="font: inherit; background: var(--ink-soft); color: var(--paper); border: 1px solid var(--border); border-radius: 8px; padding: 10px 14px;">
+			<option value="">Усі статуси</option>
+			{Object.entries(projectStatusLabels).map(([value, label]) => (
+				<option value={value} selected={value === statusFilter}>{label}</option>
+			))}
+		</select>
+		<select name="payment" style="font: inherit; background: var(--ink-soft); color: var(--paper); border: 1px solid var(--border); border-radius: 8px; padding: 10px 14px;">
+			<option value="">Усі оплати</option>
+			{Object.entries(paymentStatusLabels).map(([value, label]) => (
+				<option value={value} selected={value === paymentFilter}>{label}</option>
+			))}
+		</select>
+		<button type="submit" class="btn btn--ghost">Фільтрувати</button>
+		{(q || clientFilter || statusFilter || paymentFilter) && (
+			<a href="/app/admin/projects" class="btn btn--ghost">Скинути</a>
+		)}
+	</form>
+
+	<div class="card table-wrap">
+		<table class="data-table">
+			<thead>
+				<tr>
+					<th>Проект</th>
+					<th>Сайт</th>
+					<th>Клієнт</th>
+					<th>Статус</th>
+					<th>Оплата</th>
+				</tr>
+			</thead>
+			<tbody>
+				{
+					filtered.length === 0 ? (
+						<tr>
+							<td colspan="5" style="color: var(--muted);">
+								Нічого не знайдено.
+							</td>
+						</tr>
+					) : (
+						filtered.map((p) => (
+							<tr>
+								<td>
+									<a href={`/app/admin/projects/${p.id}`}>{p.name}</a>
+								</td>
+								<td style="font-size: 13px; color: var(--muted);">{p.websiteUrl ?? '—'}</td>
+								<td>
+									<a href={`/app/admin/clients/${p.clientId}`}>{p.clientName}</a>
+								</td>
+								<td>
+									<span class="badge">{projectStatusLabels[p.status] ?? p.status}</span>
+								</td>
+								<td>
+									<span class="badge badge--accent">{paymentStatusLabels[p.paymentStatus] ?? p.paymentStatus}</span>
+								</td>
+							</tr>
+						))
+					)
+				}
+			</tbody>
+		</table>
+	</div>
+</AppLayout>

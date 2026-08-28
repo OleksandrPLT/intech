@@ -1,0 +1,90 @@
+---
+import { eq } from 'drizzle-orm';
+import AppLayout from '../../../../../layouts/AppLayout.astro';
+import ReceiptCard from '../../../../../components/ReceiptCard.astro';
+import { db } from '../../../../../db/client';
+import { projects, users, projectPayments, tasks } from '../../../../../db/schema';
+import { countries } from '../../../../../lib/countries';
+import { resolvePayer } from '../../../../../lib/payerInfo';
+
+const user = Astro.locals.user!;
+const projectId = Number(Astro.params.id);
+const paymentId = Number(Astro.url.searchParams.get('payment'));
+
+const project = db.select().from(projects).where(eq(projects.id, projectId)).get();
+if (!project) return Astro.redirect('/app/admin/projects');
+
+const client = db.select().from(users).where(eq(users.id, project.clientId)).get();
+const payment = db.select().from(projectPayments).where(eq(projectPayments.id, paymentId)).get();
+if (!payment || payment.projectId !== projectId || payment.type !== 'income') {
+	// Receipts are only meaningful for income entries — an expense has no client to bill.
+	return Astro.redirect(`/app/admin/projects/${projectId}#finance`);
+}
+
+const countryName = countries.find((c) => c.code === client?.country)?.name ?? client?.country ?? '';
+const receiptNumber = `RCT-${String(project.id).padStart(4, '0')}-${String(payment.id).padStart(5, '0')}`;
+const issueDate = payment.paidAt ?? payment.createdAt.slice(0, 10);
+const description = payment.note || `Оплата за проектом «${project.name}»`;
+
+const selectedTaskIds = (payment.taskIds ?? '')
+	.split(',')
+	.map((s) => Number(s.trim()))
+	.filter((n) => !Number.isNaN(n));
+const coveredTasks =
+	selectedTaskIds.length > 0
+		? db.select({ id: tasks.id, title: tasks.title }).from(tasks).where(eq(tasks.projectId, projectId)).all().filter((t) => selectedTaskIds.includes(t.id))
+		: [];
+
+const payer = resolvePayer(project, client, countryName);
+
+// A completely separate render path for the PDF/print output (no
+// AppLayout at all — never shares a DOM with the sidebar) rather than
+// relying on @media print to hide it, which wasn't reliable enough.
+const bare = Astro.url.searchParams.get('bare') === '1';
+---
+
+{
+	bare ? (
+		<html lang="uk">
+			<head>
+				<meta charset="utf-8" />
+				<title>{`Квитанція ${receiptNumber}`}</title>
+			</head>
+			<body>
+				<ReceiptCard
+					receiptNumber={receiptNumber}
+					issueDate={issueDate}
+					payer={payer}
+					projectName={project.name}
+					websiteUrl={project.websiteUrl}
+					amount={payment.amount}
+					currency={payment.currency}
+					description={description}
+					coveredTasks={coveredTasks}
+				/>
+			</body>
+		</html>
+	) : (
+		<AppLayout user={user} title={`Квитанція ${receiptNumber}`}>
+			<div class="app-header no-print">
+				<h1>Квитанція {receiptNumber}</h1>
+				<div style="display: flex; gap: 10px;">
+					<a href={`/app/admin/projects/${project.id}#finance`} class="btn btn--ghost">← До проекту</a>
+					<a href={`/api/admin/projects/${project.id}/receipt-pdf?payment=${payment.id}`} class="btn btn--primary">Завантажити PDF</a>
+				</div>
+			</div>
+
+			<ReceiptCard
+				receiptNumber={receiptNumber}
+				issueDate={issueDate}
+				payer={payer}
+				projectName={project.name}
+				websiteUrl={project.websiteUrl}
+				amount={payment.amount}
+				currency={payment.currency}
+				description={description}
+				coveredTasks={coveredTasks}
+			/>
+		</AppLayout>
+	)
+}

@@ -1,0 +1,66 @@
+---
+import { eq, inArray } from 'drizzle-orm';
+import AppLayout from '../../../../layouts/AppLayout.astro';
+import { db } from '../../../../db/client';
+import { tasks, projects, users } from '../../../../db/schema';
+import { taskStatusLabels } from '../../../../lib/labels';
+
+const user = Astro.locals.user!;
+const id = Number(Astro.params.id);
+const task = db.select().from(tasks).where(eq(tasks.id, id)).get();
+
+if (!task) {
+	return Astro.redirect('/app/admin/projects');
+}
+
+const project = db.select().from(projects).where(eq(projects.id, task.projectId)).get();
+const teamMembers = db.select().from(users).where(inArray(users.role, ['admin', 'staff'])).all();
+const error = Astro.url.searchParams.get('error');
+---
+
+<AppLayout user={user} title={task.title}>
+	<div class="app-header">
+		<h1>{task.title}</h1>
+		<a href={`/app/admin/projects/${task.projectId}`} class="btn btn--ghost">← До проекту «{project?.name}»</a>
+	</div>
+
+	{error && <p class="form-error" style="margin-bottom: 14px; max-width: 520px;">Вкажіть назву задачі.</p>}
+
+	<form method="POST" action={`/api/admin/tasks/${task.id}`} class="card" style="padding: 20px; max-width: 520px; display: flex; flex-direction: column; gap: 12px;">
+		<div class="field">
+			<label for="title">Назва</label>
+			<input type="text" id="title" name="title" value={task.title} required />
+		</div>
+		<div class="field">
+			<label for="description">Опис</label>
+			<textarea id="description" name="description">{task.description}</textarea>
+		</div>
+		<div class="field">
+			<label for="status">Статус</label>
+			<select id="status" name="status">
+				{Object.entries(taskStatusLabels).map(([value, label]) => (
+					<option value={value} selected={value === task.status}>{label}</option>
+				))}
+			</select>
+		</div>
+		<div class="field">
+			<label for="assignedTo">Призначено</label>
+			<select id="assignedTo" name="assignedTo">
+				<option value="">— не призначено</option>
+				{teamMembers.map((m) => (
+					<option value={m.id} selected={m.id === task.assignedTo}>{m.name}</option>
+				))}
+			</select>
+		</div>
+		<div class="field">
+			<label for="dueDate">Термін</label>
+			<input type="date" id="dueDate" name="dueDate" value={task.dueDate ?? ''} />
+		</div>
+		<button type="submit" class="btn btn--primary" style="justify-content: center;">Зберегти</button>
+	</form>
+
+	<form method="POST" action={`/api/admin/tasks/${task.id}`} style="margin-top: 16px;" onsubmit="return confirm('Видалити задачу?')">
+		<input type="hidden" name="intent" value="delete" />
+		<button type="submit" class="btn btn--ghost" style="color: #ff8a80;">Видалити задачу</button>
+	</form>
+</AppLayout>

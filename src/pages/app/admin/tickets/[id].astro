@@ -1,0 +1,88 @@
+---
+import { eq } from 'drizzle-orm';
+import AppLayout from '../../../../layouts/AppLayout.astro';
+import TicketDetailContent from '../../../../components/TicketDetailContent.astro';
+import { db } from '../../../../db/client';
+import { tickets, projects } from '../../../../db/schema';
+import { getTicketMessages } from '../../../../lib/ticketMessages';
+import { formatTicketNumber } from '../../../../lib/ticketNumber';
+import { listApprovals, listEvents } from '../../../../lib/ticketApprovals';
+
+const user = Astro.locals.user!;
+const id = Number(Astro.params.id);
+
+const ticket = db.select().from(tickets).where(eq(tickets.id, id)).get();
+if (!ticket) {
+	return Astro.redirect('/app/admin/tickets');
+}
+
+const project = db.select().from(projects).where(eq(projects.id, ticket.projectId)).get();
+const messages = getTicketMessages(id, { includeInternal: true });
+const ticketNumber = formatTicketNumber(ticket.category, ticket.number);
+const approvals = listApprovals(id);
+const events = listEvents(id);
+const emailSent = Astro.url.searchParams.get('emailSent');
+const errorParam = Astro.url.searchParams.get('error');
+const activeTab = Astro.url.searchParams.get('tab');
+
+// ?partial=1 — fetched by the ticket-list modal (see index.astro): the same
+// content, without the AppLayout chrome, so it can be dropped straight into
+// a <dialog>.
+const isPartial = Astro.url.searchParams.get('partial') === '1';
+---
+
+{
+	isPartial ? (
+		<TicketDetailContent
+			ticketId={ticket.id}
+			subject={ticket.subject}
+			ticketNumber={ticketNumber}
+			category={ticket.category}
+			projectId={ticket.projectId}
+			projectName={project?.name ?? '—'}
+			projectHref={`/app/admin/projects/${project?.id}`}
+			messages={messages as any}
+			currentUserId={user.id}
+			isAdmin={true}
+			replyAction={`/api/tickets/${ticket.id}/reply`}
+			statusAction={`/api/tickets/${ticket.id}/status`}
+			currentStatus={ticket.status}
+			approvals={approvals}
+			events={events}
+			emailSent={emailSent}
+			errorParam={errorParam}
+			activeTab={activeTab}
+			showTitle={true}
+		/>
+	) : (
+		<AppLayout user={user} title={ticket.subject}>
+			<div class="app-header">
+				<h1>{ticket.subject}</h1>
+				<a href="/app/admin/tickets" class="btn btn--ghost">
+					← Усі тікети
+				</a>
+			</div>
+
+			<TicketDetailContent
+				ticketId={ticket.id}
+				subject={ticket.subject}
+				ticketNumber={ticketNumber}
+				category={ticket.category}
+				projectId={ticket.projectId}
+				projectName={project?.name ?? '—'}
+				projectHref={`/app/admin/projects/${project?.id}`}
+				messages={messages as any}
+				currentUserId={user.id}
+				isAdmin={true}
+				replyAction={`/api/tickets/${ticket.id}/reply`}
+				statusAction={`/api/tickets/${ticket.id}/status`}
+				currentStatus={ticket.status}
+				approvals={approvals}
+				events={events}
+				emailSent={emailSent}
+				errorParam={errorParam}
+			activeTab={activeTab}
+			/>
+		</AppLayout>
+	)
+}

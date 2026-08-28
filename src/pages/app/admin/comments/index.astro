@@ -1,0 +1,95 @@
+---
+import { desc } from 'drizzle-orm';
+import AppLayout from '../../../../layouts/AppLayout.astro';
+import { db } from '../../../../db/client';
+import { newsComments } from '../../../../db/schema';
+import { getNewsItem } from '../../../../data/news';
+
+const user = Astro.locals.user!;
+const all = db.select().from(newsComments).orderBy(desc(newsComments.createdAt)).all();
+const pending = all.filter((c) => !c.approved);
+const approved = all.filter((c) => c.approved);
+---
+
+<AppLayout user={user} title="Коментарі">
+	<div class="app-header">
+		<h1>Коментарі до новин</h1>
+	</div>
+
+	<h2 style="font-size: 15px; margin-bottom: 16px;">На модерації ({pending.length})</h2>
+	{
+		pending.length === 0 ? (
+			<p style="color: var(--muted); margin-bottom: 20px;">Немає нових коментарів.</p>
+		) : (
+			<div style="display: flex; flex-direction: column; gap: 12px; margin-bottom: 24px;">
+				{pending.map((c) => (
+					<div class="card" style="padding: 20px 24px;">
+						<div style="display: flex; justify-content: space-between; gap: 12px; margin-bottom: 8px; flex-wrap: wrap;">
+							<div>
+								<strong style="color: var(--paper);">{c.name}</strong>
+								<span style="color: var(--muted); font-size: 13px; margin-left: 8px;">
+									до «{getNewsItem(c.slug)?.title.uk ?? c.slug}»
+								</span>
+							</div>
+							<span style="font-family: var(--font-mono); font-size: 12px; color: var(--muted);">
+								{new Date(c.createdAt).toLocaleString('uk-UA')}
+							</span>
+						</div>
+						<p style="margin: 0 0 14px; font-size: 15px; color: var(--paper);">{c.body}</p>
+						<div style="display: flex; gap: 8px;">
+							<form method="POST" action={`/api/admin/comments/${c.id}`}>
+								<input type="hidden" name="intent" value="approve" />
+								<button type="submit" class="btn btn--primary" style="padding: 8px 16px; font-size: 13px;">
+									Схвалити
+								</button>
+							</form>
+							<form method="POST" action={`/api/admin/comments/${c.id}`} onsubmit="return confirm('Видалити коментар?')">
+								<input type="hidden" name="intent" value="delete" />
+								<button type="submit" class="btn btn--ghost" style="padding: 8px 16px; font-size: 13px;">
+									Видалити
+								</button>
+							</form>
+						</div>
+					</div>
+				))}
+			</div>
+		)
+	}
+
+	<h2 style="font-size: 15px; margin-bottom: 16px;">Опубліковані ({approved.length})</h2>
+	{
+		approved.length === 0 ? (
+			<p style="color: var(--muted);">Ще нічого не опубліковано.</p>
+		) : (
+			<div class="card table-wrap">
+				<table class="data-table">
+					<thead>
+						<tr>
+							<th>Автор</th>
+							<th>Коментар</th>
+							<th>Новина</th>
+							<th></th>
+						</tr>
+					</thead>
+					<tbody>
+						{approved.map((c) => (
+							<tr>
+								<td>{c.name}</td>
+								<td style="max-width: 360px; white-space: normal;">{c.body}</td>
+								<td>{getNewsItem(c.slug)?.title.uk ?? c.slug}</td>
+								<td>
+									<form method="POST" action={`/api/admin/comments/${c.id}`} onsubmit="return confirm('Видалити коментар?')">
+										<input type="hidden" name="intent" value="delete" />
+										<button type="submit" class="btn btn--ghost" style="padding: 6px 12px; font-size: 12px;">
+											Видалити
+										</button>
+									</form>
+								</td>
+							</tr>
+						))}
+					</tbody>
+				</table>
+			</div>
+		)
+	}
+</AppLayout>
