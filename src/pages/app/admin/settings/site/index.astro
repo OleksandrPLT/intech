@@ -6,6 +6,8 @@ import { mailerIsConfigured } from '../../../../../lib/mailer';
 const user = Astro.locals.user!;
 const email = getSiteSetting('contact.email', '');
 const telegram = getSiteSetting('contact.telegram', '');
+const phoneUa = getSiteSetting('contact.phoneUa', '');
+const phoneEe = getSiteSetting('contact.phoneEe', '');
 
 const smtpHost = getSiteSetting('smtp.host', '');
 const smtpPort = getSiteSetting('smtp.port', '587');
@@ -57,6 +59,14 @@ const smtpOn = mailerIsConfigured();
 				<div class="field">
 					<label for="telegram">Telegram (нік без @)</label>
 					<input type="text" id="telegram" name="telegram" value={telegram} placeholder="yourusername" />
+				</div>
+				<div class="field">
+					<label for="phoneUa">Телефон (Україна)</label>
+					<input type="tel" id="phoneUa" name="phoneUa" value={phoneUa} placeholder="+380 XX XXX XX XX" data-phone-mask />
+				</div>
+				<div class="field">
+					<label for="phoneEe">Телефон (Естонія)</label>
+					<input type="tel" id="phoneEe" name="phoneEe" value={phoneEe} placeholder="+372 XXXX XXXX" />
 				</div>
 				<button type="submit" class="btn btn--primary" style="align-self: flex-start; padding: 9px 20px; font-size: 13px;">Зберегти</button>
 			</form>
@@ -135,6 +145,30 @@ const smtpOn = mailerIsConfigured();
 		</div>
 	</div>
 </AppLayout>
+
+<script>
+	// Same Ukrainian phone mask as ClientProfileFields.astro / the project contacts block.
+	document.querySelectorAll<HTMLInputElement>('input[data-phone-mask]').forEach((input) => {
+		input.addEventListener('input', () => {
+			let digits = input.value.replace(/\D/g, '');
+			if (!digits) {
+				input.value = '';
+				return;
+			}
+			if (digits.startsWith('0')) digits = '380' + digits.slice(1);
+			else if (!digits.startsWith('380')) digits = '380' + digits;
+			digits = digits.slice(0, 12);
+
+			const rest = digits.slice(3);
+			let formatted = '+380';
+			if (rest.length) formatted += ' ' + rest.slice(0, 2);
+			if (rest.length > 2) formatted += ' ' + rest.slice(2, 5);
+			if (rest.length > 5) formatted += ' ' + rest.slice(5, 7);
+			if (rest.length > 7) formatted += ' ' + rest.slice(7, 9);
+			input.value = formatted;
+		});
+	});
+</script>
 
 <style>
 	.settings-links {

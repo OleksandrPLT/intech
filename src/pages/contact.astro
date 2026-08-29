@@ -12,6 +12,8 @@ const services = getServices();
 // until an admin fills the real values in.
 const EMAIL = getSiteSetting('contact.email', '[EMAIL]');
 const TELEGRAM = getSiteSetting('contact.telegram', '[TELEGRAM]');
+const PHONE_UA = getSiteSetting('contact.phoneUa', '');
+const PHONE_EE = getSiteSetting('contact.phoneEe', '');
 ---
 
 <BaseLayout lang={lang} title={t('meta.contact.title')} description={t('meta.contact.description')}>
@@ -36,6 +38,22 @@ const TELEGRAM = getSiteSetting('contact.telegram', '[TELEGRAM]');
 					<span class="contact-card__label">{t('contact.locationLabel')}</span>
 					<span class="contact-card__value">{t('contact.location')}</span>
 				</div>
+				{
+					PHONE_UA && (
+						<a href={`tel:${PHONE_UA.replace(/\s+/g, '')}`} class="card contact-card">
+							<span class="contact-card__label">{t('contact.phoneUaLabel')}</span>
+							<span class="contact-card__value">{PHONE_UA}</span>
+						</a>
+					)
+				}
+				{
+					PHONE_EE && (
+						<a href={`tel:${PHONE_EE.replace(/\s+/g, '')}`} class="card contact-card">
+							<span class="contact-card__label">{t('contact.phoneEeLabel')}</span>
+							<span class="contact-card__value">{PHONE_EE}</span>
+						</a>
+					)
+				}
 			</div>
 
 			<h2 class="contact__or">{t('contact.or')}</h2>
@@ -95,7 +113,7 @@ const TELEGRAM = getSiteSetting('contact.telegram', '[TELEGRAM]');
 
 	.contact__cards {
 		display: grid;
-		grid-template-columns: repeat(3, 1fr);
+		grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
 		gap: 20px;
 		margin-bottom: 56px;
 	}
