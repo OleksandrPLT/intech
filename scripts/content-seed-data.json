@@ -1,0 +1,378 @@
+{
+	"news": [
+		{
+			"slug": "site-launch",
+			"date": "2026-08-24",
+			"image": null,
+			"icon": "launch",
+			"translations": {
+				"uk": {
+					"title": "Запустили новий сайт intech.org.ua",
+					"excerpt": "Новий сайт з описом послуг, портфоліо та клієнтським кабінетом із тікетами вже працює.",
+					"body": "Запустили новий сайт intech.org.ua з описом послуг, портфоліо реальних проектів і особистим кабінетом для клієнтів.\n\nУ кабінеті клієнти бачать статус свого проекту й статус оплати, а також можуть вести тікети — питання, баги, запити — прямо по своєму проекту, з файлами й історією листування. Для проектів, де це потрібно, є API, щоб підключити тікет-систему напряму до клієнтського сайту чи застосунку.\n\nСайт працює трьома мовами — українською, англійською та естонською."
+				},
+				"en": {
+					"title": "Launched the new intech.org.ua site",
+					"excerpt": "The new site — services, portfolio, and a client cabinet with a ticket system — is live.",
+					"body": "We've launched the new intech.org.ua site with a services overview, a portfolio of real projects, and a client cabinet.\n\nIn the cabinet, clients see their project's status and payment status, and can open tickets — questions, bugs, requests — tied to their project, with file attachments and a full message history. For projects that need it, there's an API to wire the ticket system directly into a client's own site or app.\n\nThe site is available in three languages: Ukrainian, English, and Estonian."
+				},
+				"et": {
+					"title": "Käivitasime uue intech.org.ua veebisaidi",
+					"excerpt": "Uus veebisait — teenused, portfoolio ja tiketisüsteemiga kliendikabinet — on nüüd avatud.",
+					"body": "Käivitasime uue intech.org.ua veebisaidi koos teenuste ülevaate, päriselt töötavate projektide portfooliо ja kliendikabinetiga.\n\nKabinetis näevad kliendid oma projekti staatust ja makse staatust ning saavad avada pileteid — küsimusi, vigu, päringuid — otse oma projekti kohta, koos manuste ja täieliku sõnumiajalooga. Projektidele, kus seda on vaja, on olemas API, et ühendada piletisüsteem otse kliendi enda saidi või rakendusega.\n\nSait on saadaval kolmes keeles: ukraina, inglise ja eesti keeles."
+				}
+			}
+		},
+		{
+			"slug": "estonia-expansion",
+			"date": "2026-08-24",
+			"image": null,
+			"icon": "globe",
+			"translations": {
+				"uk": {
+					"title": "Тепер приймаємо проекти і в Естонії",
+					"excerpt": "Паралельно з роботою в Україні готуємо реєстрацію компанії в Естонії.",
+					"body": "Окрім роботи з українськими клієнтами з Полтави, готуємо реєстрацію компанії в Естонії — щоб зручніше працювати з естонськими та ширше європейськими клієнтами.\n\nСайт тепер доступний естонською мовою, а серед проектів у портфоліо вже є клієнти з Естонії."
+				},
+				"en": {
+					"title": "Now also taking on projects in Estonia",
+					"excerpt": "Alongside our work in Ukraine, we're preparing to register a company in Estonia.",
+					"body": "Alongside working with Ukrainian clients from Poltava, we're preparing to register a company in Estonia — to work more smoothly with Estonian and broader European clients.\n\nThe site is now available in Estonian, and the portfolio already includes clients from Estonia."
+				},
+				"et": {
+					"title": "Nüüd võtame projekte vastu ka Eestis",
+					"excerpt": "Lisaks tööle Ukrainas valmistume ettevõtet registreerima ka Eestis.",
+					"body": "Lisaks Ukraina klientidega töötamisele Poltavast, valmistume ettevõtet registreerima ka Eestis — et teha mugavamalt koostööd Eesti ja laiemalt Euroopa klientidega.\n\nSait on nüüd saadaval eesti keeles ning portfoolios on juba ka Eesti kliente."
+				}
+			}
+		}
+	],
+	"portfolio": [
+		{
+			"url": "https://lms-ua.info",
+			"logo": null,
+			"tags": "Bot",
+			"sortOrder": 0,
+			"translations": {
+				"uk": {
+					"title": "Lumos",
+					"description": "Портал входу для панелі керування асистентом."
+				},
+				"en": {
+					"title": "Lumos",
+					"description": "Login portal for an assistant control panel."
+				},
+				"et": {
+					"title": "Lumos",
+					"description": "Sisselogimisportaal assistendi juhtpaneeli jaoks."
+				}
+			}
+		},
+		{
+			"url": "https://miro.lms-ua.info",
+			"logo": "/portfolio-logos/miro-lms.png",
+			"tags": "Custom",
+			"sortOrder": 1,
+			"translations": {
+				"uk": {
+					"title": "Дошка",
+					"description": "Інтерактивна дошка для командних вікторин і live-трivia у реальному часі."
+				},
+				"en": {
+					"title": "Board",
+					"description": "An interactive board for real-time team quizzes and trivia."
+				},
+				"et": {
+					"title": "Tahvel",
+					"description": "Interaktiivne tahvel reaalajas meeskonnaviktoriinide jaoks."
+				}
+			}
+		},
+		{
+			"url": "https://work.hha.ee",
+			"logo": "/portfolio-logos/novaflow.png",
+			"tags": "Bot,CRM",
+			"sortOrder": 2,
+			"translations": {
+				"uk": {
+					"title": "NovaFlow",
+					"description": "Система авторизації з інтеграцією корпоративного Telegram-бота для швидкого входу."
+				},
+				"en": {
+					"title": "NovaFlow",
+					"description": "An authorization system with corporate Telegram bot integration for one-click login."
+				},
+				"et": {
+					"title": "NovaFlow",
+					"description": "Autoriseerimissüsteem koos ettevõtte Telegrami botiga kiireks sisselogimiseks."
+				}
+			}
+		},
+		{
+			"url": "https://pgfoods.ee",
+			"logo": null,
+			"tags": "Сайт",
+			"sortOrder": 3,
+			"translations": {
+				"uk": {
+					"title": "P&G GRUPP",
+					"description": "Корпоративний сайт компанії P&G GRUPP."
+				},
+				"en": {
+					"title": "P&G GRUPP",
+					"description": "Corporate website for P&G GRUPP."
+				},
+				"et": {
+					"title": "P&G GRUPP",
+					"description": "P&G GRUPP AS-i ettevõtte veebisait."
+				}
+			}
+		},
+		{
+			"url": "https://talks-ai.pro",
+			"logo": "/portfolio-logos/talks-ai.png",
+			"tags": "Custom",
+			"sortOrder": 4,
+			"translations": {
+				"uk": {
+					"title": "Talks AI",
+					"description": "Платформа для розвитку навичок комунікації через структуровані тренування."
+				},
+				"en": {
+					"title": "Talks AI",
+					"description": "A platform for developing communication skills through structured training."
+				},
+				"et": {
+					"title": "Talks AI",
+					"description": "Platvorm suhtlemisoskuste arendamiseks struktureeritud treeningute kaudu."
+				}
+			}
+		}
+	],
+	"services": [
+		{
+			"slug": "web-development",
+			"icon": "web",
+			"sortOrder": 0,
+			"translations": {
+				"uk": {
+					"title": "Розробка сайтів",
+					"summary": "Сайти під ключ — від візитки до складного багатосторінкового проекту.",
+					"description": "Розробляю сайти з нуля: від технічного завдання й структури до верстки, адаптивності під усі пристрої та публікації. Код чистий і зрозумілий — з ним потім можна працювати іншим розробникам, без прив'язки до мене.",
+					"features": "Технічне завдання та структура сайту\nАдаптивна верстка (десктоп, планшет, мобільний)\nОптимізація швидкості та базове SEO\nПідключення домену, хостингу та SSL\nПередача коду та коротка документація",
+					"forWhom": "Бізнесам, яким потрібен сайт-візитка або каталог\nПроектам, що переростають безкоштовні конструктори\nТим, хто хоче код у власності, а не в чужому сервісі"
+				},
+				"en": {
+					"title": "Website development",
+					"summary": "Websites built to order — from a landing page to a full multi-page project.",
+					"description": "I build websites from scratch: from the brief and site structure through markup, responsiveness across devices, and launch. The code stays clean and readable, so other developers can pick it up later without depending on me.",
+					"features": "Brief and site structure\nResponsive layout (desktop, tablet, mobile)\nSpeed optimization and basic SEO\nDomain, hosting and SSL setup\nCode handover with short documentation",
+					"forWhom": "Businesses that need a landing page or catalog site\nProjects that have outgrown free website builders\nAnyone who wants to own their code, not rent it from a platform"
+				},
+				"et": {
+					"title": "Veebisaidi arendus",
+					"summary": "Veebisaidid tellimuse järgi — sihtlehest kuni suuremahulise mitmeleheküljelise projektini.",
+					"description": "Arendan veebisaite nullist: lähteülesandest ja struktuurist kuni markupi, kõigi seadmetega ühilduvuse ja avaldamiseni. Kood jääb puhtaks ja loetavaks — hiljem saavad sellega töötada ka teised arendajad, ilma minust sõltumata.",
+					"features": "Lähteülesanne ja saidi struktuur\nResponsiivne kujundus (arvuti, tahvel, mobiil)\nKiiruse optimeerimine ja baas-SEO\nDomeeni, majutuse ja SSL-i seadistamine\nKoodi üleandmine koos lühikese dokumentatsiooniga",
+					"forWhom": "Ettevõtetele, kes vajavad visiitkaart-saiti või kataloogi\nProjektidele, mis on üle kasvanud tasuta saidiehitajad\nNeile, kes tahavad koodi enda omandisse, mitte üürida platvormilt"
+				}
+			}
+		},
+		{
+			"slug": "crm",
+			"icon": "crm",
+			"sortOrder": 1,
+			"translations": {
+				"uk": {
+					"title": "CRM-системи",
+					"summary": "Облік клієнтів, заявок і продажів під ваші реальні процеси.",
+					"description": "Розробляю CRM під конкретний бізнес-процес, а не підлаштовую бізнес під готовий шаблон. Це база клієнтів, воронка заявок, статуси, нагадування та звіти — саме те, що потрібно для контролю продажів, без зайвого функціоналу, за який доводиться переплачувати.",
+					"features": "Аналіз процесу продажів і облік вимог\nБаза клієнтів, угод і заявок з історією\nПрава доступу для ролей у команді\nІнтеграції: телефонія, месенджери, оплати\nЗвіти та дашборди для контролю показників",
+					"forWhom": "Компаніям, яким тісно в Excel-таблицях\nВідділам продажів з нетиповою воронкою\nБізнесам, які не хочуть платити за зайві модулі готових CRM"
+				},
+				"en": {
+					"title": "CRM systems",
+					"summary": "Track customers, leads and sales the way your business actually works.",
+					"description": "I build CRM systems around a specific business process instead of forcing the business into a generic template. That means a customer database, a lead pipeline, statuses, reminders and reports — exactly what you need to run sales, without paying for features you never use.",
+					"features": "Sales process analysis and requirements\nCustomer, deal and lead database with history\nRole-based access for the team\nIntegrations: telephony, messengers, payments\nReports and dashboards to track performance",
+					"forWhom": "Companies that have outgrown spreadsheets\nSales teams with a non-standard pipeline\nBusinesses that don't want to pay for unused modules in off-the-shelf CRMs"
+				},
+				"et": {
+					"title": "CRM-süsteemid",
+					"summary": "Kliendid, päringud ja müük — nii nagu teie ettevõte tegelikult töötab.",
+					"description": "Loon CRM-i konkreetse äriprotsessi ümber, mitte ei suru ettevõtet valmismalli. See tähendab kliendibaasi, müügilehtrit, olekuid, meeldetuletusi ja aruandeid — täpselt seda, mida on vaja müügi juhtimiseks, ilma et peaksite maksma funktsioonide eest, mida kunagi ei kasuta.",
+					"features": "Müügiprotsessi analüüs ja nõuete kaardistamine\nKlientide, tehingute ja päringute andmebaas koos ajalooga\nRollipõhised õigused meeskonnale\nIntegratsioonid: telefoni, sõnumirakendused, maksed\nAruanded ja armatuurlauad tulemuslikkuse jälgimiseks",
+					"forWhom": "Ettevõtetele, kellel on Exceli tabelid ammendunud\nMüügimeeskondadele ebatüüpilise lehtriga\nEttevõtetele, kes ei taha maksta valmis-CRM-ide kasutamata moodulite eest"
+				}
+			}
+		},
+		{
+			"slug": "custom-projects",
+			"icon": "custom",
+			"sortOrder": 2,
+			"translations": {
+				"uk": {
+					"title": "Кастомні проекти",
+					"summary": "Веб-застосунки й автоматизація під нетипову задачу.",
+					"description": "Якщо задача не вкладається у \"зробити сайт\" — внутрішній інструмент, автоматизація рутини, інтеграція кількох сервісів між собою — беруся за проект з нуля. Разом визначаємо, що саме треба побудувати, і я реалізую це як окремий застосунок або сервіс.",
+					"features": "Обстеження задачі та технічної можливості\nПроектування архітектури під ваш випадок\nРозробка застосунку або сервісу з нуля\nІнтеграція з наявними системами через API\nПідтримка після запуску",
+					"forWhom": "Бізнесам з нестандартним внутрішнім процесом\nПроектам, яким потрібна інтеграція кількох сервісів\nТим, хто вже пробував \"готові рішення\" — і вони не підійшли"
+				},
+				"en": {
+					"title": "Custom projects",
+					"summary": "Web applications and automation for tasks that don't fit a template.",
+					"description": "When a task doesn't fit neatly into \"build a website\" — an internal tool, automating a routine, integrating several services together — I take it on from scratch. We work out exactly what needs to be built, and I deliver it as a standalone application or service.",
+					"features": "Discovery of the task and technical feasibility\nArchitecture designed around your specific case\nApplication or service development from scratch\nIntegration with existing systems via API\nSupport after launch",
+					"forWhom": "Businesses with a non-standard internal process\nProjects that need several services integrated together\nAnyone who already tried off-the-shelf tools and they didn't fit"
+				},
+				"et": {
+					"title": "Kohandatud projektid",
+					"summary": "Veebirakendused ja automatiseerimine ülesannete jaoks, mis ei mahu malli.",
+					"description": "Kui ülesanne ei mahu lihtsalt \"tee veebisait\" alla — sisemine tööriist, rutiini automatiseerimine, mitme teenuse omavaheline integreerimine — võtan projekti ette nullist. Koos selgitame välja, mida täpselt ehitada, ja teostan selle eraldiseisva rakenduse või teenusena.",
+					"features": "Ülesande ja tehnilise teostatavuse uurimine\nArhitektuuri kavandamine teie juhtumi jaoks\nRakenduse või teenuse arendus nullist\nIntegratsioon olemasolevate süsteemidega API kaudu\nTugi pärast käivitamist",
+					"forWhom": "Ettevõtetele ebatüüpilise sisemise protsessiga\nProjektidele, mis vajavad mitme teenuse integreerimist\nNeile, kes on juba proovinud \"valmislahendusi\" ja need ei sobinud"
+				}
+			}
+		},
+		{
+			"slug": "corporate-vpn",
+			"icon": "vpn",
+			"sortOrder": 3,
+			"translations": {
+				"uk": {
+					"title": "Корпоративний VPN",
+					"summary": "Безпечний доступ команди до робочих ресурсів з будь-якого місця.",
+					"description": "Налаштовую корпоративний VPN, щоб команда мала захищений доступ до внутрішніх сервісів, баз даних та інструментів — з офісу, з дому чи у відрядженні. Це закритий канал зв'язку замість відкритих портів назовні, з керованим доступом для кожного співробітника.",
+					"features": "Розгортання VPN-сервера під ваші потреби\nНалаштування клієнтів для команди (desktop, mobile)\nРозмежування доступу за ролями та пристроями\nЗахист внутрішніх сервісів від зовнішнього доступу\nІнструкція для команди та базова підтримка",
+					"forWhom": "Командам із віддаленими або розʼїзними співробітниками\nКомпаніям, яким треба закрити внутрішні сервіси від інтернету\nБізнесам, що масштабують IT-інфраструктуру і думають про безпеку"
+				},
+				"en": {
+					"title": "Corporate VPN",
+					"summary": "Secure team access to internal resources from anywhere.",
+					"description": "I set up a corporate VPN so the team can securely reach internal services, databases and tools — from the office, from home, or on the road. It's a closed communication channel instead of open ports facing the internet, with access managed per employee.",
+					"features": "VPN server deployment sized to your needs\nClient setup for the team (desktop, mobile)\nAccess control by role and device\nShielding internal services from external access\nTeam instructions and basic support",
+					"forWhom": "Teams with remote or traveling employees\nCompanies that need to close off internal services from the internet\nBusinesses scaling their IT infrastructure with security in mind"
+				},
+				"et": {
+					"title": "Ettevõtte VPN",
+					"summary": "Meeskonna turvaline juurdepääs töövahenditele igast asukohast.",
+					"description": "Seadistan ettevõtte VPN-i, et meeskonnal oleks turvaline juurdepääs sisemistele teenustele, andmebaasidele ja tööriistadele — kontorist, kodust või reisilt. See on suletud sidekanal avatud portide asemel, kus iga töötaja juurdepääsu saab hallata eraldi.",
+					"features": "VPN-serveri juurutamine vastavalt vajadustele\nKlientide seadistamine meeskonnale (arvuti, mobiil)\nJuurdepääsu piiramine rollide ja seadmete kaupa\nSisemiste teenuste kaitsmine välise juurdepääsu eest\nJuhend meeskonnale ja baastugi",
+					"forWhom": "Meeskondadele kaug- või reisitöötajatega\nEttevõtetele, kes peavad sulgema sisemised teenused internetist\nEttevõtetele, kes laiendavad IT-infrastruktuuri ja mõtlevad turvalisusele"
+				}
+			}
+		},
+		{
+			"slug": "server-setup",
+			"icon": "server",
+			"sortOrder": 4,
+			"translations": {
+				"uk": {
+					"title": "Налаштування серверів",
+					"summary": "Базова конфігурація й адміністрування сервера під ваш проект.",
+					"description": "Готую сервер під продакшн: встановлення та оновлення системи, веб-сервер (nginx), SSL-сертифікати, бекапи, базовий моніторинг і захист від типових атак. Після налаштування ви отримуєте робочий, задокументований сервер — а не \"чорну скриньку\".",
+					"features": "Встановлення та початкова конфігурація Linux-сервера\nnginx, SSL-сертифікати, автоматичне оновлення\nРезервне копіювання за розкладом\nБазовий моніторинг і захист (firewall, fail2ban)\nДокументація доступів і конфігурації",
+					"forWhom": "Проектам, що переїжджають з хостингу на власний VPS\nКомандам без штатного системного адміністратора\nТим, кому потрібен сервер під конкретний застосунок чи сайт"
+				},
+				"en": {
+					"title": "Server setup",
+					"summary": "Basic server configuration and administration for your project.",
+					"description": "I prepare a server for production: OS installation and updates, the web server (nginx), SSL certificates, backups, basic monitoring and protection against common attacks. Once it's set up, you get a working, documented server — not a black box.",
+					"features": "Linux server installation and initial configuration\nnginx, SSL certificates, automatic updates\nScheduled backups\nBasic monitoring and protection (firewall, fail2ban)\nDocumentation of access and configuration",
+					"forWhom": "Projects moving from shared hosting to their own VPS\nTeams without an in-house system administrator\nAnyone who needs a server sized for a specific app or site"
+				},
+				"et": {
+					"title": "Serveri seadistamine",
+					"summary": "Serveri baaskonfiguratsioon ja haldus teie projekti jaoks.",
+					"description": "Valmistan serveri tootmiskeskkonna jaoks ette: operatsioonisüsteemi paigaldus ja uuendused, veebiserver (nginx), SSL-sertifikaadid, varukoopiad, baasmonitooring ja kaitse tüüpiliste rünnakute eest. Pärast seadistamist saate töötava ja dokumenteeritud serveri — mitte \"musta kasti\".",
+					"features": "Linux-serveri paigaldus ja algne konfiguratsioon\nnginx, SSL-sertifikaadid, automaatsed uuendused\nAjastatud varukoopiad\nBaasmonitooring ja kaitse (firewall, fail2ban)\nJuurdepääsude ja konfiguratsiooni dokumentatsioon",
+					"forWhom": "Projektidele, mis kolivad jagatud majutuselt oma VPS-ile\nMeeskondadele ilma oma süsteemiadministraatorita\nNeile, kes vajavad serverit konkreetse rakenduse või saidi jaoks"
+				}
+			}
+		},
+		{
+			"slug": "website-redesign",
+			"icon": "redesign",
+			"sortOrder": 5,
+			"translations": {
+				"uk": {
+					"title": "Редизайн сайтів",
+					"summary": "Оновлення зовнішнього вигляду та швидкості наявного сайту.",
+					"description": "Оновлюю застарілий сайт: сучасний дизайн, адаптивність, швидкість завантаження — без втрати того, що вже добре працює (SEO-позицій, звичного контенту, структури, до якої звикли клієнти). Підходить, коли сайт є, але виглядає і працює гірше, ніж міг би.",
+					"features": "Аудит поточного сайту: дизайн, швидкість, зручність\nОновлений дизайн з урахуванням бренду\nПеренесення контенту без втрати SEO\nОптимізація швидкості завантаження\nАдаптивність під мобільні пристрої",
+					"forWhom": "Сайтам, які виглядають застарілими на фоні конкурентів\nПроектам з поганою швидкістю або мобільною версією\nБізнесам, що змінили бренд і хочуть оновити сайт під нього"
+				},
+				"en": {
+					"title": "Website redesign",
+					"summary": "A visual and performance refresh for a site you already have.",
+					"description": "I refresh an outdated website: modern design, responsiveness, faster load times — without losing what already works (SEO rankings, familiar content, the structure your customers know). A good fit when the site exists but looks and performs worse than it should.",
+					"features": "Audit of the current site: design, speed, usability\nUpdated design aligned with your brand\nContent migration without losing SEO\nLoad speed optimization\nMobile responsiveness",
+					"forWhom": "Sites that look dated next to competitors\nProjects with poor speed or a weak mobile version\nBusinesses that rebranded and want their site to match"
+				},
+				"et": {
+					"title": "Veebisaidi uuendus",
+					"summary": "Olemasoleva saidi visuaalne ja jõudluse värskendus.",
+					"description": "Uuendan vananenud veebisaidi: kaasaegne disain, responsiivsus, kiirem laadimisaeg — kaotamata seda, mis juba töötab (SEO-positsioonid, tuttav sisu, struktuur, millega kliendid on harjunud). Sobib, kui sait on olemas, kuid näeb välja ja töötab halvemini, kui võiks.",
+					"features": "Praeguse saidi audit: disain, kiirus, kasutatavus\nUuendatud disain kooskõlas brändiga\nSisu ülekandmine ilma SEO-d kaotamata\nLaadimiskiiruse optimeerimine\nMobiiliga ühilduvus",
+					"forWhom": "Saitidele, mis näevad konkurentide kõrval vananenud välja\nProjektidele kehva kiiruse või nõrga mobiiliversiooniga\nEttevõtetele, kes muutsid brändi ja tahavad saiti sellega vastavusse viia"
+				}
+			}
+		},
+		{
+			"slug": "corporate-email",
+			"icon": "email",
+			"sortOrder": 6,
+			"translations": {
+				"uk": {
+					"title": "Корпоративна пошта та Workspace",
+					"summary": "Налаштування й підтримка Google Workspace або Microsoft 365 для команди.",
+					"description": "Підключаю корпоративну пошту на власному домені та налаштовую Google Workspace або Microsoft 365: акаунти співробітників, спільні календарі й диски, права доступу. Після запуску супроводжую — нові співробітники, відновлення доступу, базові налаштування безпеки пошти.",
+					"features": "Підключення домену та налаштування DNS (MX, SPF, DKIM, DMARC)\nСтворення акаунтів співробітників і груп розсилки\nСпільні диски, календарі та документи для команди\nПеренесення пошти зі старого сервісу без втрати листів\nПідтримка: нові співробітники, відновлення доступу",
+					"forWhom": "Компаніям, що досі ведуть робочу переписку з особистої пошти\nКомандам, яким потрібен спільний календар і диск\nБізнесам, що хочуть пошту на власному домені, а не @gmail.com"
+				},
+				"en": {
+					"title": "Corporate email & Workspace",
+					"summary": "Setting up and supporting Google Workspace or Microsoft 365 for a team.",
+					"description": "I set up corporate email on your own domain and configure Google Workspace or Microsoft 365: employee accounts, shared calendars and drives, access permissions. After launch, I keep supporting it — new employees, access recovery, basic email security settings.",
+					"features": "Domain connection and DNS setup (MX, SPF, DKIM, DMARC)\nEmployee accounts and mailing groups\nShared drives, calendars and documents for the team\nMail migration from a previous provider without losing messages\nSupport: new employees, access recovery",
+					"forWhom": "Companies still handling work email from personal accounts\nTeams that need a shared calendar and drive\nBusinesses that want email on their own domain, not @gmail.com"
+				},
+				"et": {
+					"title": "Ettevõtte e-post ja Workspace",
+					"summary": "Google Workspace'i või Microsoft 365 seadistamine ja tugi meeskonnale.",
+					"description": "Ühendan ettevõtte e-posti teie enda domeenil ja seadistan Google Workspace'i või Microsoft 365: töötajate kontod, jagatud kalendrid ja kettad, juurdepääsuõigused. Pärast käivitamist pakun tuge — uued töötajad, juurdepääsu taastamine, e-posti baasturvalisuse seaded.",
+					"features": "Domeeni ühendamine ja DNS-i seadistamine (MX, SPF, DKIM, DMARC)\nTöötajate kontod ja meililistid\nJagatud kettad, kalendrid ja dokumendid meeskonnale\nE-posti ülekandmine eelmiselt teenusepakkujalt kirju kaotamata\nTugi: uued töötajad, juurdepääsu taastamine",
+					"forWhom": "Ettevõtetele, kes ajavad tööasju endiselt isiklikult e-postilt\nMeeskondadele, kes vajavad jagatud kalendrit ja ketast\nEttevõtetele, kes tahavad e-posti oma domeenil, mitte @gmail.com"
+				}
+			}
+		},
+		{
+			"slug": "telegram-bots",
+			"icon": "bot",
+			"sortOrder": 7,
+			"translations": {
+				"uk": {
+					"title": "Telegram-боти",
+					"summary": "Боти для заявок, підтримки клієнтів і автоматизації рутини.",
+					"description": "Розробляю Telegram-боти під конкретну задачу: прийом заявок, відповіді на типові питання клієнтів, сповіщення команди, інтеграція з CRM або сайтом. Бот бере на себе рутинну комунікацію, поки ви займаєтесь бізнесом.",
+					"features": "Проєктування сценарію під вашу задачу\nПрийом заявок і повідомлень від клієнтів\nІнтеграція з CRM, таблицями або внутрішнім сервісом\nСповіщення команди про нові заявки чи події\nРозміщення на сервері та підтримка після запуску",
+					"forWhom": "Бізнесам, які приймають заявки чи запити в Telegram\nКомандам, що хочуть автоматизувати типові відповіді\nПроектам, яким потрібні сповіщення про події в реальному часі"
+				},
+				"en": {
+					"title": "Telegram bots",
+					"summary": "Bots for leads, customer support and routine automation.",
+					"description": "I build Telegram bots for a specific task: taking in leads, answering common customer questions, notifying the team, integrating with a CRM or website. The bot handles routine communication while you run the business.",
+					"features": "Scenario design built around your task\nCollecting leads and messages from customers\nIntegration with a CRM, spreadsheet or internal service\nTeam notifications for new leads or events\nServer deployment and support after launch",
+					"forWhom": "Businesses that take leads or requests through Telegram\nTeams that want to automate common responses\nProjects that need real-time event notifications"
+				},
+				"et": {
+					"title": "Telegrami botid",
+					"summary": "Botid päringute, klienditoe ja rutiini automatiseerimise jaoks.",
+					"description": "Arendan Telegrami botte konkreetse ülesande jaoks: päringute vastuvõtt, tüüpküsimustele vastamine, meeskonna teavitamine, integratsioon CRM-i või veebisaidiga. Bot võtab rutiinse suhtluse enda peale, kuni teie tegelete äriga.",
+					"features": "Stsenaariumi kavandamine vastavalt teie ülesandele\nPäringute ja sõnumite vastuvõtt klientidelt\nIntegratsioon CRM-i, tabeli või sisemise teenusega\nMeeskonna teavitamine uutest päringutest või sündmustest\nJuurutamine serverisse ja tugi pärast käivitamist",
+					"forWhom": "Ettevõtetele, kes võtavad päringuid vastu Telegrami kaudu\nMeeskondadele, kes tahavad automatiseerida tüüpvastuseid\nProjektidele, mis vajavad reaalajas sündmuste teavitusi"
+				}
+			}
+		}
+	]
+}

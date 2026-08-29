@@ -14,6 +14,7 @@
     "db:studio": "drizzle-kit studio",
     "create-admin": "node scripts/create-admin.mjs",
     "seed-content": "tsx scripts/seed-content.ts",
+    "export-content": "tsx scripts/export-content.ts",
     "generate-og-image": "node scripts/generate-og-image.mjs"
   },
   "dependencies": {
