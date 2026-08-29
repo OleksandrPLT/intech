@@ -1,0 +1,233 @@
+---
+import KursorMark from './KursorMark.astro';
+import { getKursorContent, type KursorLang } from '../lib/kursorContent';
+import { useTranslations, localeUrl } from '../i18n/utils';
+
+interface Props {
+	lang: KursorLang;
+}
+
+const { lang } = Astro.props;
+const t = useTranslations(lang);
+const c = getKursorContent(lang);
+---
+
+<section class="section kursor-hero">
+	<div class="container kursor-hero__inner">
+		<KursorMark size="lg" />
+		<div>
+			<span class="eyebrow">{c.eyebrow}</span>
+			<h1>{c.title}</h1>
+			<p class="kursor-hero__subtitle">{c.subtitle}</p>
+		</div>
+	</div>
+</section>
+
+<section class="section section--tight">
+	<div class="container kursor-intro">
+		<h2>{c.introTitle}</h2>
+		{c.intro.map((p) => <p>{p}</p>)}
+	</div>
+</section>
+
+<section class="section section--tight kursor-modules">
+	<div class="container">
+		<h2>{c.modulesTitle}</h2>
+		<div class="kursor-modules__grid">
+			{
+				c.modules.map((group) => (
+					<div class="kursor-module card">
+						<h3>{group.category}</h3>
+						<dl>
+							{group.items.map((item) => (
+								<>
+									<dt>{item.title}</dt>
+									<dd>{item.description}</dd>
+								</>
+							))}
+						</dl>
+					</div>
+				))
+			}
+		</div>
+	</div>
+</section>
+
+<section class="section section--tight kursor-roadmap">
+	<div class="container">
+		<h2>{c.roadmapTitle}</h2>
+		<div class="kursor-roadmap__grid">
+			<div>
+				<span class="eyebrow">{c.roadmapNearTitle}</span>
+				<div class="kursor-roadmap__items">
+					{
+						c.roadmapNear.map((item) => (
+							<div class="kursor-roadmap__item card">
+								<strong>{item.title}</strong>
+								<p>{item.description}</p>
+							</div>
+						))
+					}
+				</div>
+			</div>
+			<div>
+				<span class="eyebrow">{c.roadmapLongTitle}</span>
+				<div class="kursor-roadmap__items">
+					{
+						c.roadmapLong.map((item) => (
+							<div class="kursor-roadmap__item card">
+								<strong>{item.title}</strong>
+								<p>{item.description}</p>
+							</div>
+						))
+					}
+				</div>
+			</div>
+		</div>
+	</div>
+</section>
+
+<section class="section section--tight">
+	<div class="container cta-card card">
+		<p class="kursor-cta__text">{c.ctaText}</p>
+		<a href={localeUrl(lang, '/contact')} class="btn btn--primary">{c.ctaButton}</a>
+	</div>
+</section>
+
+<style>
+	.kursor-hero {
+		border-bottom: 1px solid var(--border);
+	}
+
+	.kursor-hero__inner {
+		display: flex;
+		align-items: flex-start;
+		gap: 24px;
+	}
+
+	.kursor-hero h1 {
+		font-size: clamp(32px, 4.6vw, 48px);
+		margin: 10px 0 6px;
+	}
+
+	.kursor-hero__subtitle {
+		font-family: var(--font-mono);
+		font-size: 15px;
+		color: var(--muted);
+		margin: 0;
+	}
+
+	.kursor-intro {
+		max-width: 720px;
+	}
+
+	.kursor-intro h2,
+	.kursor-modules h2,
+	.kursor-roadmap h2 {
+		font-size: clamp(24px, 3vw, 32px);
+		margin-bottom: 24px;
+	}
+
+	.kursor-intro p {
+		font-size: 17px;
+		color: var(--paper);
+	}
+
+	.kursor-modules__grid {
+		display: grid;
+		grid-template-columns: repeat(2, 1fr);
+		gap: 20px;
+	}
+
+	.kursor-module {
+		padding: 24px;
+	}
+
+	.kursor-module h3 {
+		font-size: 15px;
+		color: var(--accent);
+		font-family: var(--font-mono);
+		text-transform: uppercase;
+		letter-spacing: 0.06em;
+		margin-bottom: 16px;
+	}
+
+	.kursor-module dl {
+		margin: 0;
+		display: flex;
+		flex-direction: column;
+		gap: 12px;
+	}
+
+	.kursor-module dt {
+		font-weight: 600;
+		color: var(--paper);
+		font-size: 15px;
+	}
+
+	.kursor-module dd {
+		margin: 4px 0 0;
+		font-size: 14px;
+		color: var(--muted);
+		line-height: 1.55;
+	}
+
+	.kursor-roadmap__grid {
+		display: grid;
+		grid-template-columns: 1fr 1fr;
+		gap: 32px;
+	}
+
+	.kursor-roadmap__items {
+		display: flex;
+		flex-direction: column;
+		gap: 12px;
+		margin-top: 16px;
+	}
+
+	.kursor-roadmap__item {
+		padding: 16px 20px;
+	}
+
+	.kursor-roadmap__item strong {
+		font-size: 15px;
+		color: var(--paper);
+	}
+
+	.kursor-roadmap__item p {
+		margin: 6px 0 0;
+		font-size: 14px;
+	}
+
+	.cta-card {
+		display: flex;
+		align-items: center;
+		justify-content: space-between;
+		gap: 24px;
+		padding: 48px;
+		flex-wrap: wrap;
+	}
+
+	.kursor-cta__text {
+		margin: 0;
+		max-width: 560px;
+		font-size: 17px;
+		color: var(--paper);
+	}
+
+	@media (max-width: 860px) {
+		.kursor-modules__grid,
+		.kursor-roadmap__grid {
+			grid-template-columns: 1fr;
+		}
+	}
+
+	@media (max-width: 620px) {
+		.kursor-hero__inner {
+			flex-direction: column;
+		}
+		.cta-card {
+			padding: 32px;
+		}
+	}
+</style>

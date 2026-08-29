@@ -17,6 +17,11 @@ export const ui = {
 		'nav.about': 'Про мене',
 		'nav.contact': 'Контакти',
 		'nav.cta': 'Обговорити проект',
+		'nav.kursor': 'Kursor',
+
+		'meta.kursor.title': 'Kursor by Intech — власна панель керування сервером',
+		'meta.kursor.description':
+			'Kursor — власна панель керування сервером на Go: сайти, SSL, VPN, корпоративна пошта, служба підтримки, єдиний вхід. Повний опис і план розвитку.',
 
 		'footer.tagline': 'Веб-розробка та ІТ-інфраструктура з Полтави, Україна.',
 		'footer.services': 'Послуги',
@@ -95,6 +100,7 @@ export const ui = {
 		'home.kursor.features.4.text': 'Логіни й паролі проектів зберігаються зашифрованими (AES-256), а не у відкритому тексті.',
 		'home.kursor.features.5.title': 'Мультимовність з нуля',
 		'home.kursor.features.5.text': 'Українська, англійська, естонська — на рівні архітектури, не плагіном поверх.',
+		'home.kursor.readMore': 'Детальніше про Kursor →',
 
 		'home.cta.title': 'Маєте задачу — обговоримо, як її вирішити',
 		'home.cta.text': 'Опишіть проект, і я скажу, що для нього реально потрібно.',
@@ -150,6 +156,11 @@ export const ui = {
 		'nav.about': 'About',
 		'nav.contact': 'Contact',
 		'nav.cta': 'Discuss a project',
+		'nav.kursor': 'Kursor',
+
+		'meta.kursor.title': 'Kursor by Intech — our own server control panel',
+		'meta.kursor.description':
+			'Kursor is our own server control panel built in Go: sites, SSL, VPN, corporate email, service desk, single sign-on. Full description and roadmap.',
 
 		'footer.tagline': 'Web development and IT infrastructure from Poltava, Ukraine.',
 		'footer.services': 'Services',
@@ -227,6 +238,7 @@ export const ui = {
 		'home.kursor.features.4.text': 'Project logins and passwords are stored encrypted (AES-256), never in plain text.',
 		'home.kursor.features.5.title': 'Multilingual from day one',
 		'home.kursor.features.5.text': 'Ukrainian, English, Estonian — built into the architecture, not bolted on as a plugin.',
+		'home.kursor.readMore': 'More about Kursor →',
 
 		'home.cta.title': "Have a task? Let's work out how to solve it",
 		'home.cta.text': "Describe the project, and I'll tell you what it actually needs.",
@@ -282,6 +294,11 @@ export const ui = {
 		'nav.about': 'Minust',
 		'nav.contact': 'Kontakt',
 		'nav.cta': 'Arutame projekti',
+		'nav.kursor': 'Kursor',
+
+		'meta.kursor.title': 'Kursor by Intech — oma serveri haldpaneel',
+		'meta.kursor.description':
+			'Kursor on meie enda Go-s ehitatud serveri haldpaneel: saidid, SSL, VPN, ettevõtte meil, klienditugi, ühekordne sisselogimine. Täielik kirjeldus ja arenduskava.',
 
 		'footer.tagline': 'Veebiarendus ja IT-infrastruktuur Poltavast, Ukrainast.',
 		'footer.services': 'Teenused',
@@ -360,6 +377,7 @@ export const ui = {
 		'home.kursor.features.4.text': 'Projektide kasutajanimed ja paroolid säilitatakse krüpteerituna (AES-256), mitte lihttekstina.',
 		'home.kursor.features.5.title': 'Mitmekeelsus algusest peale',
 		'home.kursor.features.5.text': 'Ukraina, inglise, eesti keel — arhitektuuri, mitte lisandmooduli tasemel.',
+		'home.kursor.readMore': 'Rohkem Kursorist →',
 
 		'home.cta.title': 'Kas teil on ülesanne? Arutame, kuidas seda lahendada',
 		'home.cta.text': 'Kirjeldage projekti ja ma ütlen, mida see tegelikult vajab.',

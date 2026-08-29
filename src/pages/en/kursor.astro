@@ -1,0 +1,13 @@
+---
+export const prerender = true;
+import BaseLayout from '../../layouts/BaseLayout.astro';
+import KursorPageContent from '../../components/KursorPageContent.astro';
+import { useTranslations } from '../../i18n/utils';
+
+const lang = 'en' as const;
+const t = useTranslations(lang);
+---
+
+<BaseLayout lang={lang} title={t('meta.kursor.title')} description={t('meta.kursor.description')}>
+	<KursorPageContent lang={lang} />
+</BaseLayout>

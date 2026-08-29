@@ -1,7 +1,7 @@
 ---
 import KursorMark from './KursorMark.astro';
 import type { Lang } from '../i18n/ui';
-import { useTranslations } from '../i18n/utils';
+import { useTranslations, localeUrl } from '../i18n/utils';
 
 interface Props {
 	lang: Lang;
@@ -33,10 +33,16 @@ const features = [0, 1, 2, 3, 4, 5] as const;
 				))
 			}
 		</div>
+
+		<a href={localeUrl(lang, '/kursor')} class="btn btn--ghost kursor-more">{t('home.kursor.readMore')}</a>
 	</div>
 </section>
 
 <style>
+	.kursor-more {
+		margin-top: 24px;
+	}
+
 	.kursor-section {
 		border-top: 1px solid var(--border);
 		border-bottom: 1px solid var(--border);
