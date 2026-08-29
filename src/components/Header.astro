@@ -192,7 +192,17 @@ const navItems: {
 
 		.nav {
 			position: fixed;
-			inset: 76px 0 0 0;
+			top: 76px;
+			left: 0;
+			right: 0;
+			/* Not "inset: 76px 0 0 0" (bottom: 0) — .header has
+			   backdrop-filter, which makes it the containing block for
+			   fixed descendants, so "bottom: 0" resolved against the
+			   header's own 76px height instead of the viewport, collapsing
+			   this overlay to ~0 height and letting the page show through.
+			   dvh is a true viewport unit regardless of containing block. */
+			height: calc(100dvh - 76px);
+			overflow-y: auto;
 			flex-direction: column;
 			align-items: stretch;
 			justify-content: flex-start;
