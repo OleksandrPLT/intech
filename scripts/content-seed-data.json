@@ -147,6 +147,26 @@
 					"description": "Platvorm suhtlemisoskuste arendamiseks struktureeritud treeningute kaudu."
 				}
 			}
+		},
+		{
+			"url": "https://ytol.es",
+			"logo": null,
+			"tags": "Сайт",
+			"sortOrder": 5,
+			"translations": {
+				"uk": {
+					"title": "Ytol Group",
+					"description": "Сайт компанії Ytol Group — інвестиції в елітну нерухомість на Коста-дель-Соль."
+				},
+				"en": {
+					"title": "Ytol Group",
+					"description": "Website for Ytol Group — luxury real estate investment on the Costa del Sol."
+				},
+				"et": {
+					"title": "Ytol Group",
+					"description": "Ytol Groupi veebisait — luksuskinnisvara investeeringud Costa del Solil."
+				}
+			}
 		}
 	],
 	"services": [
